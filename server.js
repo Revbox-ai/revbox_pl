@@ -10,6 +10,11 @@ const PORT = process.env.PORT || 3200;
 app.use(express.json());
 app.use(cookieParser());
 
+// Panel admina — serwowany przez Express (nginx proxy)
+app.get(['/admin', '/admin/'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+});
+
 // Static files — frontend HTML/CSS/JS
 app.use(express.static(path.join(__dirname), {
   index: 'index.html',
