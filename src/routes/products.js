@@ -22,12 +22,22 @@ router.get('/', async (req, res) => {
     const category = req.query.category || '';
     const featured = req.query.featured === 'true';
     const adminMode = req.query.admin === 'true';
+    const status = req.query.status || '';           // 'active'|'inactive'|'' (admin only)
+    const featuredFilter = req.query.featured_filter || ''; // 'yes'|'no'|'' (admin only)
+    const priceEurMin = req.query.price_eur_min ? parseFloat(req.query.price_eur_min) : null;
+    const priceEurMax = req.query.price_eur_max ? parseFloat(req.query.price_eur_max) : null;
+    const pricePlnMin = req.query.price_pln_min ? parseFloat(req.query.price_pln_min) : null;
+    const pricePlnMax = req.query.price_pln_max ? parseFloat(req.query.price_pln_max) : null;
 
     const conditions = [];
     const params = [];
 
     if (!adminMode) {
       conditions.push('p.is_active = true');
+    } else if (status === 'active') {
+      conditions.push('p.is_active = true');
+    } else if (status === 'inactive') {
+      conditions.push('p.is_active = false');
     }
     if (search) {
       params.push(`%${search}%`);
@@ -40,6 +50,15 @@ router.get('/', async (req, res) => {
     if (featured) {
       conditions.push('p.is_featured = true');
     }
+    if (adminMode && featuredFilter === 'yes') {
+      conditions.push('p.is_featured = true');
+    } else if (adminMode && featuredFilter === 'no') {
+      conditions.push('p.is_featured = false');
+    }
+    if (priceEurMin !== null) { params.push(priceEurMin); conditions.push(`p.price_eur >= $${params.length}`); }
+    if (priceEurMax !== null) { params.push(priceEurMax); conditions.push(`p.price_eur <= $${params.length}`); }
+    if (pricePlnMin !== null) { params.push(pricePlnMin); conditions.push(`p.price_pln >= $${params.length}`); }
+    if (pricePlnMax !== null) { params.push(pricePlnMax); conditions.push(`p.price_pln <= $${params.length}`); }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
@@ -47,8 +66,9 @@ router.get('/', async (req, res) => {
     const { rows } = await db.query(
       `SELECT p.id, p.sku, p.name_pl, p.name_en, p.price_eur, p.price_pln,
               p.is_active, p.is_featured, p.priority, p.image_url,
-              p.description_pl, p.url, p.created_at,
-              c.name_pl AS category_name, c.slug AS category_slug
+              p.description_pl, p.url, p.source, p.created_at,
+              c.name_pl AS category_name, c.slug AS category_slug,
+              (SELECT COUNT(*) FROM product_features pf WHERE pf.product_id = p.id) AS feature_count
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
        ${where}
@@ -133,15 +153,16 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { name_pl, name_en, category_id, price_eur, price_pln,
-            url, description_pl, description_en, is_active, is_featured, priority, image_url } = req.body;
+            url, description_pl, description_en, is_active, is_featured, priority, image_url, source } = req.body;
     const { rows } = await db.query(
       `UPDATE products SET name_pl=$1, name_en=$2, category_id=$3, price_eur=$4, price_pln=$5,
          url=$6, description_pl=$7, description_en=$8, is_active=$9, is_featured=$10,
-         priority=$11, image_url=$12, updated_at=NOW()
-       WHERE id=$13 RETURNING *`,
+         priority=$11, image_url=$12, source=$13, updated_at=NOW()
+       WHERE id=$14 RETURNING *`,
       [name_pl, name_en || null, category_id || null, price_eur || null, price_pln || null,
        url || null, description_pl || null, description_en || null,
-       is_active !== false, !!is_featured, priority || 0, image_url || null, req.params.id]
+       is_active !== false, !!is_featured, priority || 0, image_url || null,
+       source || null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Nie znaleziono' });
     await log(req, 'update_product', req.params.id, { name: name_pl });

@@ -302,7 +302,7 @@ async function renderDashboard() {
 }
 
 // ── PRODUCTS ──────────────────────────────────────────────────
-let prodState = {page:1, search:'', category:'', total:0};
+let prodState = {page:1, search:'', category:'', status:'', featured:'', priceEurMin:'', priceEurMax:'', pricePlnMin:'', pricePlnMax:'', total:0};
 
 async function renderProducts() {
   const content = document.getElementById('content');
@@ -316,16 +316,30 @@ async function renderProducts() {
   content.innerHTML = `
     <div class="search-bar">
       <input class="form-control" id="prod-search" placeholder="Szukaj po nazwie, SKU..." value="${prodState.search}" oninput="prodState.search=this.value;prodState.page=1;loadProducts()">
-      <select class="form-control" id="prod-cat" style="max-width:200px" onchange="prodState.category=this.value;prodState.page=1;loadProducts()">
+      <select class="form-control" id="prod-cat" style="max-width:180px" onchange="prodState.category=this.value;prodState.page=1;loadProducts()">
         <option value="">Wszystkie kategorie</option>${catOpts}
       </select>
+      <select class="form-control" id="prod-status" style="max-width:140px" onchange="prodState.status=this.value;prodState.page=1;loadProducts()">
+        <option value="">Wszystkie statusy</option>
+        <option value="active">Aktywne</option>
+        <option value="inactive">Nieaktywne</option>
+      </select>
+      <select class="form-control" id="prod-featured" style="max-width:140px" onchange="prodState.featured=this.value;prodState.page=1;loadProducts()">
+        <option value="">Wyróżnione: wszystkie</option>
+        <option value="yes">Wyróżnione: tak</option>
+        <option value="no">Wyróżnione: nie</option>
+      </select>
+      <input class="form-control" id="prod-eur-min" type="number" step="0.01" placeholder="Cena EUR od" style="max-width:120px" value="${prodState.priceEurMin}" oninput="prodState.priceEurMin=this.value;prodState.page=1;loadProducts()">
+      <input class="form-control" id="prod-eur-max" type="number" step="0.01" placeholder="Cena EUR do" style="max-width:120px" value="${prodState.priceEurMax}" oninput="prodState.priceEurMax=this.value;prodState.page=1;loadProducts()">
+      <input class="form-control" id="prod-pln-min" type="number" step="0.01" placeholder="Cena PLN od" style="max-width:120px" value="${prodState.pricePlnMin}" oninput="prodState.pricePlnMin=this.value;prodState.page=1;loadProducts()">
+      <input class="form-control" id="prod-pln-max" type="number" step="0.01" placeholder="Cena PLN do" style="max-width:120px" value="${prodState.pricePlnMax}" oninput="prodState.pricePlnMax=this.value;prodState.page=1;loadProducts()">
     </div>
     <div class="card" style="padding:0">
       <div class="table-wrap">
         <table id="prod-table">
           <thead><tr>
             <th>ID</th><th>SKU</th><th>Nazwa</th><th>Kategoria</th>
-            <th>Cena EUR</th><th>Cena PLN</th><th>Status</th><th>Wyróżniony</th><th>Akcje</th>
+            <th>Źródło</th><th>Cena PLN</th><th>Cechy</th><th>Status</th><th>Akcje</th>
           </tr></thead>
           <tbody id="prod-body"><tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Ładowanie...</td></tr></tbody>
         </table>
@@ -334,16 +348,25 @@ async function renderProducts() {
     <div class="pagination" id="prod-pag"></div>
   `;
   if (cats) document.getElementById('prod-cat').value = prodState.category;
+  document.getElementById('prod-status').value = prodState.status;
+  document.getElementById('prod-featured').value = prodState.featured;
   loadProducts();
 }
 
 async function loadProducts() {
   const p = prodState;
   const params = new URLSearchParams({page:p.page, limit:30, admin:'true', search:p.search, category:p.category});
+  if (p.status) params.set('status', p.status);
+  if (p.featured) params.set('featured_filter', p.featured);
+  if (p.priceEurMin) params.set('price_eur_min', p.priceEurMin);
+  if (p.priceEurMax) params.set('price_eur_max', p.priceEurMax);
+  if (p.pricePlnMin) params.set('price_pln_min', p.pricePlnMin);
+  if (p.pricePlnMax) params.set('price_pln_max', p.pricePlnMax);
   const data = await api(`/api/products?${params}`);
   if (!data) return;
   prodState.total = data.total;
 
+  const srcLabel = {xkom_de:'x-kom.de', morele:'Morele', amazon:'Amazon', allegro:'Allegro', other:'Inne'};
   const tbody = document.getElementById('prod-body');
   if (!data.products.length) {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Brak produktów</td></tr>';
@@ -354,15 +377,15 @@ async function loadProducts() {
         <td><code style="font-size:11px">${escHtml(p.sku)}</code></td>
         <td><span class="trunc" title="${escHtml(p.name_pl)}">${escHtml(p.name_pl)}</span></td>
         <td>${p.category_name ? `<span class="badge badge-blue">${escHtml(p.category_name)}</span>` : '<span style="color:#ccc">—</span>'}</td>
-        <td>${p.price_eur ? `€${Number(p.price_eur).toFixed(2)}` : '—'}</td>
+        <td>${p.source ? `<span class="badge" style="background:#e8f0fe;color:#1967d2">${srcLabel[p.source]||p.source}</span>` : '<span style="color:#ccc">—</span>'}</td>
         <td>${p.price_pln ? `${Number(p.price_pln).toFixed(2)} zł` : '—'}</td>
+        <td>${p.feature_count > 0 ? `<span class="badge badge-green">${p.feature_count}</span>` : '<span style="color:#ccc">0</span>'}</td>
         <td>
           <label class="toggle">
             <input type="checkbox" ${p.is_active?'checked':''} onchange="toggleProduct(${p.id},this)">
             <span class="toggle-slider"></span>
           </label>
         </td>
-        <td>${p.is_featured ? '<span class="badge badge-orange">★ Tak</span>' : '—'}</td>
         <td>
           <button class="btn btn-secondary btn-sm" onclick="openProductModal(${p.id})">Edytuj</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${escHtml(p.name_pl)}')">Usuń</button>
@@ -545,6 +568,17 @@ async function openProductPage(id) {
             <input class="form-control" id="f-img" value="${escHtml(prod.image_url||'')}">
           </div>
           <div class="form-group">
+            <label>Źródło danych</label>
+            <select class="form-control" id="f-source">
+              <option value="">— brak —</option>
+              <option value="xkom_de" ${prod.source==='xkom_de'?'selected':''}>x-kom.de</option>
+              <option value="morele" ${prod.source==='morele'?'selected':''}>Morele.net</option>
+              <option value="amazon" ${prod.source==='amazon'?'selected':''}>Amazon</option>
+              <option value="allegro" ${prod.source==='allegro'?'selected':''}>Allegro</option>
+              <option value="other" ${prod.source==='other'?'selected':''}>Inne</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Opis</label>
             <textarea class="form-control" id="f-desc" rows="5">${escHtml(prod.description_pl||'')}</textarea>
           </div>
@@ -606,6 +640,7 @@ async function saveProductPage(id) {
     price_pln: document.getElementById('f-price-pln').value || null,
     url: document.getElementById('f-url').value.trim() || null,
     image_url: document.getElementById('f-img').value.trim() || null,
+    source: document.getElementById('f-source').value || null,
     description_pl: document.getElementById('f-desc').value.trim() || null,
     is_active: document.getElementById('f-active').checked,
     is_featured: document.getElementById('f-feat').checked,
