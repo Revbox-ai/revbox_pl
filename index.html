@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revbox - Strona główna</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-page="home">
+  <div class="top-eco-bar">Dbamy o planetę - redukujemy ilość zwrotów</div>
+
+  <header class="site-header">
+    <div class="container header-inner header-layout">
+      <a class="brand" href="index.html"><img class="brand-logo brand-logo-wide" src="assets/images/cropped-logo.png" alt="Revbox"></a>
+      <div class="header-search-nav">
+        <div class="search-bar"><input type="search" placeholder="Znajdź produkt ..."><button>Szukaj</button></div>
+        <nav class="main-nav">
+          <a href="category.html">Kategorie produktów</a>
+          <a href="how-it-works.html">Jak to działa?</a>
+          <a href="platform.html">O platformie</a>
+          <a href="about-revbox.html">O Revbox</a>
+          <a href="rankings.html">Rankingi</a>
+          <a href="guides.html">Poradniki</a>
+        </nav>
+      </div>
+      <div class="header-tools">
+        <a href="category.html" class="btn btn-outline header-cta">Stwórz swój profil preferencji</a>
+        <nav class="header-actions">
+          <a class="icon-link" href="favorites.html" aria-label="Ulubione"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7-4.35-9.1-8.65C1.12 8.3 3.11 4.5 7.2 4.5c2.02 0 3.7 1.02 4.8 2.74 1.1-1.72 2.78-2.74 4.8-2.74 4.09 0 6.08 3.8 4.3 7.35C19 16.15 12 20.5 12 20.5Z"></path></svg></a>
+          <a class="icon-link" href="#" aria-label="Profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.6-3 4.1-4.5 7-4.5S17.4 16 19 19"></path></svg></a>
+          <a href="#">Zaloguj</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-grid home-layout">
+    <aside class="sidebar card">
+      <div class="sidebar-head">
+        <strong>Kategorie</strong>
+        <a href="#">Pozostałe kategorie</a>
+      </div>
+      <ul class="category-list compact">
+        <li>Biuro i firma</li>
+        <li>Budowa i remont</li>
+        <li>Dla dziecka</li>
+        <li>Dom i wnętrze</li>
+        <li>Gry</li>
+        <li>Hobby i zwierzęta</li>
+        <li>Komputery</li>
+        <li>Księgarnia</li>
+        <li>Moda</li>
+        <li>Motoryzacja</li>
+        <li>Ogród</li>
+        <li>Sport i rekreacja</li>
+        <li>Sprzęt AGD</li>
+        <li>Sprzęt RTV</li>
+        <li>Telefony i akcesoria</li>
+        <li>Uroda</li>
+        <li>Zdrowie</li>
+      </ul>
+    </aside>
+
+    <section class="content-column">
+      <section class="hero-grid">
+        <article class="hero-panel hero-panel-wide real-hero top-hero">
+          <img src="assets/images/home-hero-top.png" alt="Jak działa Revbox">
+          <div class="hero-copy hero-copy-image hero-copy-top">
+            <h1 class="hero-title-top"><span class="hero-qmark">?</span>Jak działa Revbox?</h1>
+            <a href="product.html" class="btn hero-btn-outline">Dowiedz się więcej!</a>
+          </div>
+        </article>
+
+        <article class="hero-panel hero-panel-banner real-hero bottom-hero">
+          <img src="assets/images/home-hero-bottom.png" alt="Zakupy z Revbox">
+          <div class="hero-copy hero-copy-image hero-copy-bottom">
+            <h2 class="hero-title-bottom">Wybierasz się na zakupy?<br>Weź ze sobą<br>Revbox!</h2>
+            <a href="category.html" class="btn hero-btn-dark">Przeczytaj recenzje produktów</a>
+          </div>
+        </article>
+
+        <article class="hero-panel hero-panel-tall real-hero tall-hero">
+          <img src="assets/images/home-hero-tall.png" alt="Odnawiasz kuchnię?">
+          <div class="hero-copy hero-copy-image hero-copy-tall">
+            <h2 class="hero-title-tall">Odnawiasz<br>kuchnię?<br>Pomożemy!</h2>
+            <a href="category.html" class="btn hero-btn-dark">Zobacz polecane produkty</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-block">
+        <div class="section-head">
+          <h3>Najlepiej dopasowane smartfony</h3>
+          <a href="category.html">Zobacz wszystkie</a>
+        </div>
+        <div class="product-row" data-render="featured-phones"></div>
+      </section>
+
+      <section class="brand-strip section-block">
+        <div class="section-head"><h3>Popularne marki</h3></div>
+        <div class="brand-marquee" aria-label="Popularne marki">
+          <div class="brand-track">
+            <div class="brand-item"><img src="assets/images/brands/electrolux_210x70.png" alt="Electrolux"></div>
+            <div class="brand-item"><img src="assets/images/brands/mediaexpert_210x70.png" alt="Media Expert"></div>
+            <div class="brand-item"><img src="assets/images/brands/epson_210x70.png" alt="Epson"></div>
+            <div class="brand-item"><img src="assets/images/brands/electro_210x70.png" alt="Electro"></div>
+            <div class="brand-item"><img src="assets/images/brands/amica_210x70.png" alt="Amica"></div>
+            <div class="brand-item"><img src="assets/images/brands/brother_210x70.png" alt="Brother"></div>
+            <div class="brand-item"><img src="assets/images/brands/canon_210x70.png" alt="Canon"></div>
+            <div class="brand-item"><img src="assets/images/brands/lenovo_210x70.png" alt="Lenovo"></div>
+            <div class="brand-item"><img src="assets/images/brands/saeco_210x70.png" alt="Saeco"></div>
+            <div class="brand-item"><img src="assets/images/brands/huawei_210x70.png" alt="Huawei"></div>
+
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/electrolux_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/mediaexpert_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/epson_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/electro_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/amica_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/brother_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/canon_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/lenovo_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/saeco_210x70.png" alt=""></div>
+            <div class="brand-item" aria-hidden="true"><img src="assets/images/brands/huawei_210x70.png" alt=""></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-head">
+          <h3>AGD</h3>
+          <a href="#">Najczęściej komentowane</a>
+        </div>
+        <div class="product-row" data-render="featured-appliances"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="assets/images/cropped-logo.png" alt="Revbox">
+        <div class="footer-copy">
+          <div>contact@revbox.com</div>
+          <div>ul. Piłsudskiego 18<br>39-400 Tarnobrzeg</div>
+        </div>
+        <div class="footer-meta">
+          <div>NIP: 8672252404</div>
+          <div>KRS: 0000899118</div>
+          <div>REGON: 388839880</div>
+        </div>
+      </div>
+      <div>
+        <h4>O Revbox</h4>
+        <div class="footer-link-list tight">
+          <a href="about-revbox.html">O Revbox</a>
+          <a href="platform.html">O platformie</a>
+          <a href="how-it-works.html">Jak działają cechy</a>
+          <a href="how-it-works.html">Jak działa dobieranie produktów</a>
+        </div>
+      </div>
+      <div>
+        <h4>Dla kupujących</h4>
+        <div class="footer-link-list tight">
+          <a href="how-it-works.html">Jak to działa</a>
+          <a href="safe-shopping.html">Jak dobieramy partnerów</a>
+          <a href="help-center.html">Centrum pomocy</a>
+          <a href="contact.html">Zgłoś uwagi</a>
+        </div>
+      </div>
+      <div>
+        <h4>Popularne kategorie</h4>
+        <div class="footer-link-list tight">
+          <a href="category.html">Smartphony</a>
+          <a href="#">Laptopy</a>
+          <a href="#">Pralki</a>
+          <a href="#">Telewizory</a>
+          <a href="#">Karty graficzne</a>
+        </div>
+      </div>
+      <div class="footer-news">
+        <h4>Bądź na bieżąco</h4>
+        <div class="newsletter">
+          <input type="email" placeholder="Podaj swój adres email">
+          <button>Zapisz</button>
+        </div>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="LinkedIn">in</a>
+          <a href="#" aria-label="Twitter">x</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

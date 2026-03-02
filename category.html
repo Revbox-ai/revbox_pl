@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revbox - Smartfony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-page="category">
+  <header class="site-header simple-header">
+    <div class="container header-inner header-layout">
+      <a class="brand" href="index.html"><img class="brand-logo brand-logo-wide" src="assets/images/cropped-logo.png" alt="Revbox"></a>
+      <div class="header-search-nav">
+        <div class="search-bar"><input type="search" placeholder="Znajdź produkt ..."><button>Szukaj</button></div>
+        <nav class="main-nav">
+          <a href="category.html">Kategorie produktów</a>
+          <a href="how-it-works.html">Jak to działa?</a>
+          <a href="platform.html">O platformie</a>
+          <a href="about-revbox.html">O Revbox</a>
+          <a href="rankings.html">Rankingi</a>
+          <a href="guides.html">Poradniki</a>
+        </nav>
+      </div>
+      <div class="header-tools">
+        <a href="category.html" class="btn btn-outline header-cta">Stwórz swój profil preferencji</a>
+        <nav class="header-actions">
+          <a class="icon-link" href="favorites.html" aria-label="Ulubione"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7-4.35-9.1-8.65C1.12 8.3 3.11 4.5 7.2 4.5c2.02 0 3.7 1.02 4.8 2.74 1.1-1.72 2.78-2.74 4.8-2.74 4.09 0 6.08 3.8 4.3 7.35C19 16.15 12 20.5 12 20.5Z"></path></svg></a>
+          <a class="icon-link" href="#" aria-label="Profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.6-3 4.1-4.5 7-4.5S17.4 16 19 19"></path></svg></a>
+          <a href="#">Zaloguj</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-grid listing-layout">
+    <aside class="sidebar sticky-panel category-sidebar">
+      <div class="category-sidebar-meta">
+        <div class="breadcrumbs">Products / Smartphones</div>
+        <h1 class="page-title">Smartphony</h1>
+      </div>
+
+      <section class="feature-panel card">
+        <div class="feature-panel-head">
+          <h2>Zaznacz cechy które są dla Ciebie ważne</h2>
+          <button class="help-trigger" data-modal="featureHelp">?</button>
+        </div>
+        <p class="muted">Każda zaznaczona cecha zwiększa lub zmniejsza dopasowanie produktu.</p>
+        <div class="feature-list" data-render="features"></div>
+        <button class="btn btn-light btn-full" data-load-features>Load more</button>
+      </section>
+    </aside>
+
+    <section class="content-column">
+      <div class="section-head top-space">
+        <div>
+          <div class="eyebrow">Produkty</div>
+          <div class="filter-tags"><span>Sprzęt AGD ×</span><span>Smartfony ×</span></div>
+        </div>
+        <div class="list-controls">
+          <label>Sortuj od rekomendowane produkty</label>
+          <div class="view-switch"><button>☷</button><button>☰</button></div>
+        </div>
+      </div>
+
+      <div class="bucket-grid">
+        <button class="bucket-btn active">Smartphony do 200zł</button>
+        <button class="bucket-btn">Smartphony do 500zł</button>
+        <button class="bucket-btn">Smartphony do 1000zł</button>
+        <button class="bucket-btn">Smartphony do 2000zł</button>
+      </div>
+
+      <section class="product-grid" data-render="category-products"></section>
+
+      <nav class="pagination">
+        <a class="active" href="#">1</a>
+        <a href="#">2</a>
+        <a href="#">3</a>
+        <a href="#">4</a>
+        <a href="#">5</a>
+      </nav>
+
+      <section class="seo-box">
+        <h2>Artykuł pod SEO</h2>
+        <article>
+          <h3>Telefon lubiany ze względu na te cechy:</h3>
+          <p>POCO X3 Pro jest popularny ze względu na bardzo dobry stosunek jakości do ceny, wysoką wydajność i baterię o dużej pojemności. Ekran 120 Hz poprawia płynność działania, a solidna konstrukcja i szybkie ładowanie są często wskazywane jako istotne zalety.</p>
+        </article>
+        <article>
+          <h3>Telefon krytykowany ze względu na te cechy:</h3>
+          <p>W komentarzach użytkowników pojawiają się też głosy krytyczne dotyczące wagi urządzenia, jakości zdjęć w słabym świetle oraz braku bardziej premium materiałów. To model praktyczny, ale nie dla osób oczekujących maksymalnie smukłej formy.</p>
+        </article>
+        <article>
+          <h3>Telefon rekomendujemy osobom, które:</h3>
+          <p>Szukają wydajnego telefonu do codziennej pracy, grania i przeglądania multimediów, a jednocześnie chcą trzymać budżet pod kontrolą. To dobry wybór dla osób, które stawiają na praktyczne parametry zamiast marketingowych dodatków.</p>
+        </article>
+        <article>
+          <h3>Telefonu nie rekomendujemy osobom, które:</h3>
+          <p>Najbardziej cenią lekkość, fotografię nocną albo topowe wykończenie obudowy. W takim scenariuszu lepiej sprawdzą się modele z wyższej półki lub telefony silniej nastawione na design i aparat.</p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="featureHelp">
+    <div class="modal-card large-modal help-modal-card">
+      <button class="modal-close" data-close="featureHelp">×</button>
+      <div class="help-modal-layout">
+        <section class="help-step help-step-left">
+          <div class="step-heading">
+            <span class="step-no">1</span>
+            <h3>WYBIERZ CECHY, KTÓRE CENISZ NAJBARDZIEJ</h3>
+          </div>
+          <div class="help-feature-box">
+            <p>Zaznacz cechy które są dla Ciebie ważne dla kategorii Smartphony</p>
+            <div class="feature-list help-feature-list" data-render="help-features"></div>
+          </div>
+        </section>
+        <section class="help-step help-step-right">
+          <div class="step-heading">
+            <span class="step-no">2</span>
+            <h3>I ZOBACZ, KTÓRE PRODUKTY NAJBARDZIEJ ODPOWIADAJĄ TWOIM PREFERENCJOM</h3>
+          </div>
+          <div class="mini-products help-mini-products" data-render="help-mini-products"></div>
+        </section>
+        <section class="help-step help-step-bottom">
+          <div class="step-heading step-heading-wide">
+            <span class="step-no">3</span>
+            <h3>Wybieraj jak ekspert. Revbox łączy recenzje z wielu stron, wyłapuje kluczowe plusy i minusy oraz wskazuje produkty najlepiej dopasowane do Twoich preferencji. Dzięki temu wybierasz szybciej i pewniej.</h3>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="assets/images/cropped-logo.png" alt="Revbox">
+        <div class="footer-copy">
+          <div>contact@revbox.com</div>
+          <div>ul. Piłsudskiego 18<br>39-400 Tarnobrzeg</div>
+        </div>
+        <div class="footer-meta">
+          <div>NIP: 8672252404</div>
+          <div>KRS: 0000899118</div>
+          <div>REGON: 388839880</div>
+        </div>
+      </div>
+      <div>
+        <h4>O Revbox</h4>
+        <div class="footer-link-list tight">
+          <a href="about-revbox.html">O Revbox</a>
+          <a href="platform.html">O platformie</a>
+          <a href="how-it-works.html">Jak działają cechy</a>
+          <a href="how-it-works.html">Jak działa dobieranie produktów</a>
+        </div>
+      </div>
+      <div>
+        <h4>Dla kupujących</h4>
+        <div class="footer-link-list tight">
+          <a href="how-it-works.html">Jak to działa</a>
+          <a href="safe-shopping.html">Jak dobieramy partnerów</a>
+          <a href="help-center.html">Centrum pomocy</a>
+          <a href="contact.html">Zgłoś uwagi</a>
+        </div>
+      </div>
+      <div>
+        <h4>Popularne kategorie</h4>
+        <div class="footer-link-list tight">
+          <a href="category.html">Smartphony</a>
+          <a href="#">Laptopy</a>
+          <a href="#">Pralki</a>
+          <a href="#">Telewizory</a>
+          <a href="#">Karty graficzne</a>
+        </div>
+      </div>
+      <div class="footer-news">
+        <h4>Bądź na bieżąco</h4>
+        <div class="newsletter">
+          <input type="email" placeholder="Podaj swój adres email">
+          <button>Zapisz</button>
+        </div>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="LinkedIn">in</a>
+          <a href="#" aria-label="Twitter">x</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
