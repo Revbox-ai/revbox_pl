@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revbox Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+/* Layout */
+#app{display:flex;min-height:100vh}
+/* Sidebar */
+.sidebar{width:240px;background:#1a1a2e;color:#fff;display:flex;flex-direction:column;flex-shrink:0;transition:width .2s}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-logo h1{font-size:20px;font-weight:700;color:#e63946}
+.sidebar-logo span{font-size:12px;opacity:.5}
+.sidebar-nav{flex:1;padding:16px 0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;border-radius:0;transition:background .15s;color:rgba(255,255,255,.7);font-size:14px;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(230,57,70,.2);color:#e63946;border-right:3px solid #e63946}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:13px}
+.sidebar-footer .username{color:#e63946;font-weight:600}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:18px;font-weight:600}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
+.btn-primary{background:#e63946;color:#fff}.btn-primary:hover{background:#c62828}
+.btn-secondary{background:#f0f2f5;color:#333}.btn-secondary:hover{background:#e0e0e0}
+.btn-danger{background:#f44336;color:#fff}.btn-danger:hover{background:#d32f2f}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-success{background:#4caf50;color:#fff}.btn-success:hover{background:#388e3c}
+/* Content */
+.content{flex:1;overflow-y:auto;padding:24px}
+/* Cards/Panels */
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;margin-bottom:16px}
+.card-title{font-size:16px;font-weight:600;margin-bottom:16px;color:#1a1a2e}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #e63946}
+.stat-card.blue{border-color:#2196f3}
+.stat-card.green{border-color:#4caf50}
+.stat-card.orange{border-color:#ff9800}
+.stat-val{font-size:28px;font-weight:700;color:#1a1a2e}
+.stat-label{font-size:13px;color:#888;margin-top:4px}
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:#f8f9fa;padding:10px 14px;text-align:left;font-weight:600;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+tr:hover td{background:#fafafa}
+/* Badges */
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-green{background:#e8f5e9;color:#388e3c}
+.badge-red{background:#ffebee;color:#c62828}
+.badge-blue{background:#e3f2fd;color:#1565c0}
+.badge-orange{background:#fff3e0;color:#e65100}
+/* Forms */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:6px}
+.form-control{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;transition:border .15s}
+.form-control:focus{border-color:#e63946}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{padding:20px 24px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:18px;font-weight:600}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid #e0e0e0;display:flex;gap:8px;justify-content:flex-end}
+.close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:4px}
+/* Login */
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;align-items:center;justify-content:center}
+.login-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.login-box h1{font-size:24px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.login-box p{color:#888;font-size:14px;margin-bottom:28px}
+/* Search bar */
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar .form-control{flex:1;min-width:200px}
+/* Pagination */
+.pagination{display:flex;align-items:center;gap:8px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+.pagination button{padding:6px 12px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:13px}
+.pagination button.active{background:#e63946;color:#fff;border-color:#e63946}
+.pagination button:disabled{opacity:.4;cursor:default}
+/* Toggle */
+.toggle{position:relative;width:40px;height:22px;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:22px;cursor:pointer;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:#4caf50}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px)}
+/* Alert */
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px}
+.alert-error{background:#ffebee;color:#c62828;border:1px solid #ffcdd2}
+.alert-success{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+/* Section tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #e0e0e0}
+.tab{padding:10px 18px;cursor:pointer;font-size:14px;font-weight:500;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:#e63946;border-bottom-color:#e63946}
+/* Truncate */
+.trunc{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Revbox Admin</h1>
+    <p>Panel administracyjny</p>
+    <div id="login-err" class="alert alert-error hidden"></div>
+    <div class="form-group">
+      <label>Login</label>
+      <input class="form-control" id="l-user" type="text" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Hasło</label>
+      <input class="form-control" id="l-pass" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()">Zaloguj</button>
+  </div>
+</div>
+
+<!-- Main app (hidden until logged in) -->
+<div id="app" class="hidden">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Revbox</h1>
+      <span>Panel Admina</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" onclick="goto('dashboard')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" onclick="goto('products')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Produkty
+      </a>
+      <a class="nav-item" onclick="goto('categories')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Kategorie
+      </a>
+      <a class="nav-item" onclick="goto('users')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Użytkownicy
+      </a>
+      <a class="nav-item" onclick="goto('logs')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Logi
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="username" id="sidebar-user"></span><br>
+      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="doLogout()">Wyloguj</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div id="topbar-actions"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- Modal container -->
+<div id="modal-container"></div>
+
+<script>
+const API = '';
+let currentUser = null;
+let currentSection = 'dashboard';
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin() {
+  const user = document.getElementById('l-user').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err = document.getElementById('login-err');
+  err.classList.add('hidden');
+  try {
+    const r = await fetch('/api/admin/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error; err.classList.remove('hidden'); return; }
+    currentUser = d;
+    document.getElementById('sidebar-user').textContent = d.username;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    goto('dashboard');
+  } catch(e) { err.textContent = 'Błąd połączenia'; err.classList.remove('hidden'); }
+}
+
+async function doLogout() {
+  await fetch('/api/admin/auth/logout', {method:'POST'});
+  location.reload();
+}
+
+async function checkSession() {
+  const r = await fetch('/api/admin/auth/me');
+  const d = await r.json();
+  if (d.loggedIn) {
+    currentUser = d;
+    document.getElementById('sidebar-user').textContent = d.username;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    goto('dashboard');
+  }
+}
+
+document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function goto(section) {
+  currentSection = section;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes(`'${section}'`)) el.classList.add('active');
+  });
+  const titles = {dashboard:'Dashboard',products:'Produkty',categories:'Kategorie',users:'Użytkownicy',logs:'Logi aktywności'};
+  document.getElementById('page-title').textContent = titles[section] || section;
+  document.getElementById('topbar-actions').innerHTML = '';
+  const sections = {dashboard: renderDashboard, products: renderProducts, categories: renderCategories, users: renderUsers, logs: renderLogs};
+  (sections[section] || (() => {}))();
+}
+
+// ── API HELPERS ───────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
+  if (r.status === 401) { location.reload(); return null; }
+  return r.json();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function renderDashboard() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<p style="color:#888;padding:20px">Ładowanie...</p>';
+  const stats = await api('/api/admin/stats');
+  if (!stats) return;
+  content.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val">${Number(stats.products.total).toLocaleString('pl')}</div>
+        <div class="stat-label">Produkty łącznie</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-val">${Number(stats.products.active).toLocaleString('pl')}</div>
+        <div class="stat-label">Produkty aktywne</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-val">${Number(stats.categories.active).toLocaleString('pl')}</div>
+        <div class="stat-label">Kategorie aktywne</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-val">${Number(stats.logs.total).toLocaleString('pl')}</div>
+        <div class="stat-label">Akcje w logach</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Szybkie akcje</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="goto('products')">Zarządzaj produktami</button>
+        <button class="btn btn-secondary" onclick="goto('categories')">Zarządzaj kategoriami</button>
+        <button class="btn btn-secondary" onclick="goto('logs')">Przeglądaj logi</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────────
+let prodState = {page:1, search:'', category:'', total:0};
+
+async function renderProducts() {
+  const content = document.getElementById('content');
+  const actions = document.getElementById('topbar-actions');
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openProductModal()">+ Dodaj produkt</button>`;
+
+  // Load categories for filter
+  const cats = await api('/api/categories');
+  const catOpts = cats ? cats.map(c=>`<option value="${c.slug}">${c.name_pl}</option>`).join('') : '';
+
+  content.innerHTML = `
+    <div class="search-bar">
+      <input class="form-control" id="prod-search" placeholder="Szukaj po nazwie, SKU..." value="${prodState.search}" oninput="prodState.search=this.value;prodState.page=1;loadProducts()">
+      <select class="form-control" id="prod-cat" style="max-width:200px" onchange="prodState.category=this.value;prodState.page=1;loadProducts()">
+        <option value="">Wszystkie kategorie</option>${catOpts}
+      </select>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table id="prod-table">
+          <thead><tr>
+            <th>ID</th><th>SKU</th><th>Nazwa</th><th>Kategoria</th>
+            <th>Cena EUR</th><th>Cena PLN</th><th>Status</th><th>Wyróżniony</th><th>Akcje</th>
+          </tr></thead>
+          <tbody id="prod-body"><tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Ładowanie...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination" id="prod-pag"></div>
+  `;
+  if (cats) document.getElementById('prod-cat').value = prodState.category;
+  loadProducts();
+}
+
+async function loadProducts() {
+  const p = prodState;
+  const params = new URLSearchParams({page:p.page, limit:30, admin:'true', search:p.search, category:p.category});
+  const data = await api(`/api/products?${params}`);
+  if (!data) return;
+  prodState.total = data.total;
+
+  const tbody = document.getElementById('prod-body');
+  if (!data.products.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Brak produktów</td></tr>';
+  } else {
+    tbody.innerHTML = data.products.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td><code style="font-size:11px">${escHtml(p.sku)}</code></td>
+        <td><span class="trunc" title="${escHtml(p.name_pl)}">${escHtml(p.name_pl)}</span></td>
+        <td>${p.category_name ? `<span class="badge badge-blue">${escHtml(p.category_name)}</span>` : '<span style="color:#ccc">—</span>'}</td>
+        <td>${p.price_eur ? `€${Number(p.price_eur).toFixed(2)}` : '—'}</td>
+        <td>${p.price_pln ? `${Number(p.price_pln).toFixed(2)} zł` : '—'}</td>
+        <td>
+          <label class="toggle">
+            <input type="checkbox" ${p.is_active?'checked':''} onchange="toggleProduct(${p.id},this)">
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td>${p.is_featured ? '<span class="badge badge-orange">★ Tak</span>' : '—'}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openProductModal(${p.id})">Edytuj</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${escHtml(p.name_pl)}')">Usuń</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Pagination
+  const pages = Math.ceil(data.total / 30);
+  const pag = document.getElementById('prod-pag');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  let pagHtml = `<button ${p.page<=1?'disabled':''} onclick="prodState.page--;loadProducts()">‹</button>`;
+  const start = Math.max(1, p.page-2), end = Math.min(pages, p.page+2);
+  if (start > 1) pagHtml += `<button onclick="prodState.page=1;loadProducts()">1</button>${start>2?'<span>…</span>':''}`;
+  for (let i=start;i<=end;i++) pagHtml += `<button class="${i===p.page?'active':''}" onclick="prodState.page=${i};loadProducts()">${i}</button>`;
+  if (end < pages) pagHtml += `${end<pages-1?'<span>…</span>':''}<button onclick="prodState.page=${pages};loadProducts()">${pages}</button>`;
+  pagHtml += `<button ${p.page>=pages?'disabled':''} onclick="prodState.page++;loadProducts()">›</button>`;
+  pagHtml += `<span style="font-size:13px;color:#888">${data.total.toLocaleString('pl')} produktów</span>`;
+  pag.innerHTML = pagHtml;
+}
+
+async function toggleProduct(id, checkbox) {
+  const r = await api(`/api/admin/products/${id}/toggle`, {method:'PATCH'});
+  if (!r) { checkbox.checked = !checkbox.checked; return; }
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Usunąć produkt "${name}"?`)) return;
+  const r = await api(`/api/admin/products/${id}`, {method:'DELETE'});
+  if (r?.ok) loadProducts();
+  else alert(r?.error || 'Błąd');
+}
+
+async function openProductModal(id) {
+  const cats = await api('/api/categories');
+  let prod = null;
+  if (id) { prod = await api(`/api/products/${id}`); }
+
+  const catOpts = cats ? cats.map(c=>`<option value="${c.id}" ${prod?.category_id==c.id?'selected':''}>${c.name_pl}</option>`).join('') : '';
+  const isEdit = !!prod;
+
+  showModal(`${isEdit?'Edytuj':'Dodaj'} produkt`, `
+    <div class="form-row">
+      <div class="form-group">
+        <label>SKU *</label>
+        <input class="form-control" id="f-sku" value="${escHtml(prod?.sku||'')}" ${isEdit?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Kategoria</label>
+        <select class="form-control" id="f-cat"><option value="">— brak —</option>${catOpts}</select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nazwa *</label>
+      <input class="form-control" id="f-name" value="${escHtml(prod?.name_pl||'')}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cena EUR</label>
+        <input class="form-control" id="f-price-eur" type="number" step="0.01" value="${prod?.price_eur||''}">
+      </div>
+      <div class="form-group">
+        <label>Cena PLN</label>
+        <input class="form-control" id="f-price-pln" type="number" step="0.01" value="${prod?.price_pln||''}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>URL produktu (zewnętrzny)</label>
+      <input class="form-control" id="f-url" value="${escHtml(prod?.url||'')}">
+    </div>
+    <div class="form-group">
+      <label>URL zdjęcia</label>
+      <input class="form-control" id="f-img" value="${escHtml(prod?.image_url||'')}">
+    </div>
+    <div class="form-group">
+      <label>Opis</label>
+      <textarea class="form-control" id="f-desc" rows="3">${escHtml(prod?.description_pl||'')}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="f-active" ${prod?.is_active!==false?'checked':''}>
+        <label for="f-active" style="margin:0">Aktywny</label>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="f-feat" ${prod?.is_featured?'checked':''}>
+        <label for="f-feat" style="margin:0">Wyróżniony</label>
+      </div>
+    </div>
+  `, async () => {
+    const body = {
+      sku: document.getElementById('f-sku').value.trim(),
+      name_pl: document.getElementById('f-name').value.trim(),
+      category_id: document.getElementById('f-cat').value || null,
+      price_eur: document.getElementById('f-price-eur').value || null,
+      price_pln: document.getElementById('f-price-pln').value || null,
+      url: document.getElementById('f-url').value.trim() || null,
+      image_url: document.getElementById('f-img').value.trim() || null,
+      description_pl: document.getElementById('f-desc').value.trim() || null,
+      is_active: document.getElementById('f-active').checked,
+      is_featured: document.getElementById('f-feat').checked,
+    };
+    if (!body.name_pl) { alert('Podaj nazwę'); return; }
+    const url = isEdit ? `/api/admin/products/${id}` : '/api/admin/products';
+    const method = isEdit ? 'PUT' : 'POST';
+    const r = await api(url, {method, body: JSON.stringify(body)});
+    if (r?.id) { closeModal(); loadProducts(); }
+    else alert(r?.error || 'Błąd');
+  });
+}
+
+// ── CATEGORIES ────────────────────────────────────────────────
+async function renderCategories() {
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary" onclick="openCategoryModal()">+ Dodaj kategorię</button>`;
+  const data = await api('/api/categories');
+  if (!data) return;
+
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Nazwa</th><th>Slug</th><th>Produktów</th><th>Status</th><th>Akcje</th></tr></thead>
+          <tbody>${data.map(c => `
+            <tr>
+              <td>${c.id}</td>
+              <td><strong>${escHtml(c.name_pl)}</strong>${c.name_en?`<br><small style="color:#888">${escHtml(c.name_en)}</small>`:''}</td>
+              <td><code>${escHtml(c.slug)}</code></td>
+              <td><span class="badge badge-blue">${c.product_count}</span></td>
+              <td><span class="badge ${c.is_active?'badge-green':'badge-red'}">${c.is_active?'Aktywna':'Nieaktywna'}</span></td>
+              <td>
+                <button class="btn btn-secondary btn-sm" onclick="openCategoryModal(${c.id})">Edytuj</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id},'${escHtml(c.name_pl)}')">Usuń</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function openCategoryModal(id) {
+  let cat = null;
+  if (id) {
+    const data = await api('/api/categories');
+    cat = data?.find(c => c.id === id);
+  }
+  showModal(`${cat?'Edytuj':'Dodaj'} kategorię`, `
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nazwa (PL) *</label>
+        <input class="form-control" id="cf-name" value="${escHtml(cat?.name_pl||'')}">
+      </div>
+      <div class="form-group">
+        <label>Nazwa (EN)</label>
+        <input class="form-control" id="cf-name-en" value="${escHtml(cat?.name_en||'')}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Slug (URL) *</label>
+        <input class="form-control" id="cf-slug" value="${escHtml(cat?.slug||'')}">
+      </div>
+      <div class="form-group">
+        <label>Kolejność</label>
+        <input class="form-control" id="cf-order" type="number" value="${cat?.sort_order||0}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Opis</label>
+      <textarea class="form-control" id="cf-desc" rows="2">${escHtml(cat?.description||'')}</textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="cf-active" ${cat?.is_active!==false?'checked':''}>
+      <label for="cf-active" style="margin:0">Aktywna</label>
+    </div>
+  `, async () => {
+    const body = {
+      name_pl: document.getElementById('cf-name').value.trim(),
+      name_en: document.getElementById('cf-name-en').value.trim() || null,
+      slug: document.getElementById('cf-slug').value.trim(),
+      description: document.getElementById('cf-desc').value.trim() || null,
+      sort_order: parseInt(document.getElementById('cf-order').value) || 0,
+      is_active: document.getElementById('cf-active').checked,
+    };
+    if (!body.name_pl || !body.slug) { alert('Podaj nazwę i slug'); return; }
+    const url = id ? `/api/admin/categories/${id}` : '/api/admin/categories';
+    const r = await api(url, {method: id?'PUT':'POST', body: JSON.stringify(body)});
+    if (r?.id) { closeModal(); renderCategories(); }
+    else alert(r?.error || 'Błąd');
+  });
+}
+
+async function deleteCategory(id, name) {
+  if (!confirm(`Usunąć kategorię "${name}"? Produkty stracą przypisanie.`)) return;
+  const r = await api(`/api/admin/categories/${id}`, {method:'DELETE'});
+  if (r?.ok) renderCategories();
+  else alert(r?.error || 'Błąd');
+}
+
+// ── USERS ─────────────────────────────────────────────────────
+async function renderUsers() {
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary" onclick="openUserModal()">+ Dodaj użytkownika</button>`;
+  const data = await api('/api/admin/users');
+  if (!data) return;
+
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Login</th><th>Rola</th><th>Ostatnie logowanie</th><th>Status</th><th>Akcje</th></tr></thead>
+          <tbody>${data.map(u => `
+            <tr>
+              <td>${u.id}</td>
+              <td><strong>${escHtml(u.username)}</strong></td>
+              <td><span class="badge ${u.role==='superadmin'?'badge-orange':'badge-blue'}">${escHtml(u.role)}</span></td>
+              <td>${u.last_login ? new Date(u.last_login).toLocaleString('pl') : '—'}</td>
+              <td><span class="badge ${u.is_active?'badge-green':'badge-red'}">${u.is_active?'Aktywny':'Nieaktywny'}</span></td>
+              <td>
+                <button class="btn btn-secondary btn-sm" onclick="toggleUser(${u.id})">${u.is_active?'Dezaktywuj':'Aktywuj'}</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function toggleUser(id) {
+  const r = await api(`/api/admin/users/${id}/toggle`, {method:'PATCH'});
+  if (r?.id) renderUsers();
+  else alert(r?.error || 'Błąd');
+}
+
+function openUserModal() {
+  showModal('Dodaj użytkownika', `
+    <div class="form-group"><label>Login *</label><input class="form-control" id="uf-user"></div>
+    <div class="form-group"><label>Hasło *</label><input class="form-control" id="uf-pass" type="password"></div>
+    <div class="form-group">
+      <label>Rola</label>
+      <select class="form-control" id="uf-role">
+        <option value="admin">admin</option>
+        <option value="superadmin">superadmin</option>
+      </select>
+    </div>
+  `, async () => {
+    const body = {
+      username: document.getElementById('uf-user').value.trim(),
+      password: document.getElementById('uf-pass').value,
+      role: document.getElementById('uf-role').value,
+    };
+    if (!body.username || !body.password) { alert('Uzupełnij wszystkie pola'); return; }
+    const r = await api('/api/admin/users', {method:'POST', body: JSON.stringify(body)});
+    if (r?.id) { closeModal(); renderUsers(); }
+    else alert(r?.error || 'Błąd');
+  });
+}
+
+// ── LOGS ──────────────────────────────────────────────────────
+let logState = {page:1, user:'', action:''};
+
+async function renderLogs() {
+  document.getElementById('topbar-actions').innerHTML = '';
+  document.getElementById('content').innerHTML = `
+    <div class="search-bar">
+      <input class="form-control" id="log-user" placeholder="Filtruj po użytkowniku..." oninput="logState.user=this.value;logState.page=1;loadLogs()">
+      <input class="form-control" id="log-action" placeholder="Filtruj po akcji..." oninput="logState.action=this.value;logState.page=1;loadLogs()">
+    </div>
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table id="log-table">
+          <thead><tr><th>Czas</th><th>Użytkownik</th><th>Akcja</th><th>Typ</th><th>ID obiektu</th><th>IP</th><th>Szczegóły</th></tr></thead>
+          <tbody id="log-body"><tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Ładowanie...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination" id="log-pag"></div>
+  `;
+  loadLogs();
+}
+
+const ACTION_COLORS = {
+  login:'badge-green', login_failed:'badge-red', logout:'badge-blue',
+  create_product:'badge-green', update_product:'badge-blue', delete_product:'badge-red',
+  activate_product:'badge-green', deactivate_product:'badge-orange',
+  create_category:'badge-green', update_category:'badge-blue', delete_category:'badge-red',
+  create_user:'badge-green',
+};
+
+async function loadLogs() {
+  const s = logState;
+  const params = new URLSearchParams({page:s.page, limit:50, user:s.user, action:s.action});
+  const data = await api(`/api/admin/logs?${params}`);
+  if (!data) return;
+
+  const tbody = document.getElementById('log-body');
+  if (!data.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Brak logów</td></tr>';
+  } else {
+    tbody.innerHTML = data.logs.map(l => `
+      <tr>
+        <td style="white-space:nowrap;font-size:12px">${new Date(l.created_at).toLocaleString('pl')}</td>
+        <td>${escHtml(l.username||'—')}</td>
+        <td><span class="badge ${ACTION_COLORS[l.action]||'badge-blue'}">${escHtml(l.action)}</span></td>
+        <td>${escHtml(l.entity_type||'—')}</td>
+        <td>${escHtml(l.entity_id||'—')}</td>
+        <td style="font-size:12px">${escHtml(l.ip_address||'—')}</td>
+        <td style="font-size:11px;color:#888">${l.details?JSON.stringify(l.details).slice(0,60):''}</td>
+      </tr>
+    `).join('');
+  }
+
+  const pages = Math.ceil(data.total / 50);
+  const pag = document.getElementById('log-pag');
+  if (pages <= 1) { pag.innerHTML = `<span style="font-size:13px;color:#888">${data.total} wpisów</span>`; return; }
+  let h = `<button ${s.page<=1?'disabled':''} onclick="logState.page--;loadLogs()">‹</button>`;
+  for (let i=Math.max(1,s.page-2);i<=Math.min(pages,s.page+2);i++)
+    h += `<button class="${i===s.page?'active':''}" onclick="logState.page=${i};loadLogs()">${i}</button>`;
+  h += `<button ${s.page>=pages?'disabled':''} onclick="logState.page++;loadLogs()">›</button>`;
+  h += `<span style="font-size:13px;color:#888">${data.total} wpisów</span>`;
+  pag.innerHTML = h;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function showModal(title, body, onSave) {
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="e => { if(e.target===this) closeModal() }">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2>${title}</h2>
+          <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">${body}</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+          <button class="btn btn-primary" id="modal-save">Zapisz</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-save').onclick = onSave;
+}
+
+function closeModal() {
+  document.getElementById('modal-container').innerHTML = '';
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+checkSession();
+</script>
+</body>
+</html>

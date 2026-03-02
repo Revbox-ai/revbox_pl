@@ -1,0 +1,17 @@
+{
+  "name": "revbox-backend",
+  "version": "1.0.0",
+  "description": "Revbox platform backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.3",
+    "uuid": "^11.1.0"
+  }
+}
