@@ -319,7 +319,7 @@ async function renderDashboard() {
 }
 
 // ── PRODUCTS ──────────────────────────────────────────────────
-let prodState = {page:1, search:'', category:'', status:'', featured:'', priceEurMin:'', priceEurMax:'', pricePlnMin:'', pricePlnMax:'', total:0};
+let prodState = {page:1, search:'', category:'', status:'active', featured:'', priceEurMin:'', priceEurMax:'', pricePlnMin:'', pricePlnMax:'', total:0};
 
 async function renderProducts() {
   const content = document.getElementById('content');
@@ -338,7 +338,7 @@ async function renderProducts() {
       </select>
       <select class="form-control" id="prod-status" style="max-width:140px" onchange="prodState.status=this.value;prodState.page=1;loadProducts()">
         <option value="">Wszystkie statusy</option>
-        <option value="active">Aktywne</option>
+        <option value="active" selected>Aktywne</option>
         <option value="inactive">Nieaktywne</option>
       </select>
       <select class="form-control" id="prod-featured" style="max-width:140px" onchange="prodState.featured=this.value;prodState.page=1;loadProducts()">
