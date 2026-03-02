@@ -121,6 +121,19 @@ tr:hover td{background:#fafafa}
 /* Truncate */
 .trunc{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hidden{display:none!important}
+/* Product preview (image + desc) */
+.prod-preview-grid{display:grid;grid-template-columns:160px 1fr;gap:16px;align-items:start}
+.prod-preview-img{width:100%;border-radius:8px;object-fit:contain;max-height:160px}
+.prod-preview-ph{width:100%;height:120px;background:#f0f2f5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px}
+/* Affiliate rows */
+.aff-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.aff-row:last-child{border-bottom:none}
+.aff-logo{min-width:90px;text-align:center;font-weight:700;font-size:14px}
+.aff-logo img{max-height:32px;max-width:80px;object-fit:contain}
+.aff-info{flex:1;min-width:0}
+.aff-price-col{min-width:130px;text-align:right}
+.aff-price-col strong{display:block;font-size:15px;color:#eb6d00}
+.aff-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -171,6 +184,10 @@ tr:hover td{background:#fafafa}
       <a class="nav-item" onclick="goto('logs')" href="#">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         Logi
+      </a>
+      <a class="nav-item" onclick="goto('affiliates')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Afiliacja
       </a>
     </nav>
     <div class="sidebar-footer">
@@ -251,10 +268,10 @@ function goto(section) {
   document.querySelectorAll('.nav-item').forEach(el => {
     if (el.getAttribute('onclick')?.includes(`'${section}'`)) el.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',products:'Produkty',categories:'Kategorie',users:'Użytkownicy',logs:'Logi aktywności'};
+  const titles = {dashboard:'Dashboard',products:'Produkty',categories:'Kategorie',users:'Użytkownicy',logs:'Logi aktywności',affiliates:'Afiliacja — sklepy'};
   document.getElementById('page-title').textContent = titles[section] || section;
   document.getElementById('topbar-actions').innerHTML = '';
-  const sections = {dashboard: renderDashboard, products: renderProducts, categories: renderCategories, users: renderUsers, logs: renderLogs};
+  const sections = {dashboard: renderDashboard, products: renderProducts, categories: renderCategories, users: renderUsers, logs: renderLogs, affiliates: renderAffiliates};
   (sections[section] || (() => {}))();
 }
 
@@ -496,9 +513,11 @@ async function openProductPage(id) {
   document.getElementById('content').innerHTML =
     `<p style="color:#888;padding:20px">Ładowanie produktu...</p>`;
 
-  const [prod, cats] = await Promise.all([
+  const [prod, cats, affiliateShops, prodAffiliates] = await Promise.all([
     api(`/api/products/${id}`),
     api('/api/categories'),
+    api('/api/admin/affiliates/shops'),
+    api(`/api/admin/affiliates/product/${id}`),
   ]);
   if (!prod || prod.error) {
     document.getElementById('content').innerHTML = '<p style="color:red;padding:20px">Nie znaleziono produktu.</p>';
@@ -528,6 +547,35 @@ async function openProductPage(id) {
       <button class="feat-del" onclick="deleteFeature(${f.id || ''},${id})" title="Usuń">×</button>
     </div>`;
   }
+
+  function affRow(a) {
+    return `<div class="aff-row" id="aff-row-${a.id}">
+      <div class="aff-logo">
+        ${a.shop_logo ? `<img src="${escHtml(a.shop_logo)}" alt="${escHtml(a.shop_name)}">` : `<strong>${escHtml(a.shop_name)}</strong>`}
+      </div>
+      <div class="aff-info">
+        <div style="font-weight:600;font-size:13px">${escHtml(a.shop_name)}</div>
+        ${a.delivery_note ? `<div style="font-size:12px;color:#666;margin-top:2px">${escHtml(a.delivery_note)}</div>` : ''}
+        ${a.delivery_time ? `<div style="font-size:12px;color:#888">⏱ ${escHtml(a.delivery_time)}</div>` : ''}
+      </div>
+      <div class="aff-price-col">
+        ${a.price_pln ? `<strong>${Number(a.price_pln).toFixed(2)} zł</strong>` : ''}
+        ${a.price_with_shipping ? `<div style="font-size:11px;color:#888">Z wysyłką: ${Number(a.price_with_shipping).toFixed(2)} zł</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px">
+        <a href="${escHtml(a.product_url)}" target="_blank" class="btn btn-secondary btn-sm">↗</a>
+        <button class="btn btn-danger btn-sm" onclick="deleteAffiliate(${a.id},${id})">Usuń</button>
+      </div>
+    </div>`;
+  }
+
+  const shopOpts = (affiliateShops||[]).map(s =>
+    `<option value="${s.id}">${escHtml(s.name)}</option>`
+  ).join('');
+
+  const affiliatesHtml = (prodAffiliates||[]).length
+    ? (prodAffiliates||[]).map(affRow).join('')
+    : '<div style="color:#bbb;font-size:13px;padding:8px 0">Brak sklepów partnerskich</div>';
 
   document.getElementById('content').innerHTML = `
     <div class="edit-page">
@@ -560,7 +608,7 @@ async function openProductPage(id) {
             </div>
           </div>
           <div class="form-group">
-            <label>URL produktu</label>
+            <label>URL produktu (źródłowy)</label>
             <input class="form-control" id="f-url" value="${escHtml(prod.url||'')}">
           </div>
           <div class="form-group">
@@ -594,16 +642,31 @@ async function openProductPage(id) {
           </div>
           <div id="save-msg" style="display:none;margin-top:8px"></div>
         </div>
-
-        ${prod.url ? `<div class="card" style="padding:14px 20px">
-          <a href="${escHtml(prod.url)}" target="_blank" style="color:#f7b321;font-size:13px">
-            🔗 Otwórz w sklepie źródłowym (x-kom.de)
-          </a>
-        </div>` : ''}
       </div>
 
-      <!-- PRAWA: cechy -->
+      <!-- PRAWA: podgląd + cechy + afiliacja -->
       <div>
+        <!-- Podgląd produktu -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="prod-preview-grid">
+            <div>
+              ${prod.image_url
+                ? `<img class="prod-preview-img" src="${escHtml(prod.image_url)}" alt="">`
+                : '<div class="prod-preview-ph">Brak zdjęcia</div>'}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:15px;margin-bottom:8px;line-height:1.3">${escHtml(prod.name_pl||prod.name_en||'')}</div>
+              <p style="font-size:13px;color:#555;line-height:1.6;margin:0">
+                ${prod.description_pl
+                  ? escHtml(prod.description_pl.substring(0,450)) + (prod.description_pl.length>450?'…':'')
+                  : '<span style="color:#bbb">Brak opisu</span>'}
+              </p>
+              ${prod.price_pln ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:#eb6d00">${Number(prod.price_pln).toFixed(2)} zł</div>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Cechy -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="font-weight:600;font-size:15px">Cechy produktu <span style="color:#888;font-weight:400;font-size:13px">(${(prod.features||[]).length} łącznie)</span></div>
         </div>
@@ -627,6 +690,30 @@ async function openProductPage(id) {
             </div>
           </div>
         </div>
+
+        <!-- Afiliacja -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-title" style="margin-bottom:8px">Afiliacja — sklepy partnerskie</div>
+          <div id="affiliates-list">${affiliatesHtml}</div>
+
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px">Dodaj sklep partnerski</div>
+            ${shopOpts ? `
+            <div class="aff-add-grid">
+              <select class="form-control" id="aff-shop">
+                <option value="">Wybierz sklep...</option>${shopOpts}
+              </select>
+              <input class="form-control" id="aff-url" placeholder="URL produktu w sklepie">
+              <input class="form-control" id="aff-price" type="number" step="0.01" placeholder="Cena PLN">
+              <input class="form-control" id="aff-ship" type="number" step="0.01" placeholder="Z wysyłką PLN">
+              <input class="form-control" id="aff-time" placeholder='Czas dostawy (np. "1 dzień")'>
+              <input class="form-control" id="aff-note" placeholder='Nota (np. "odbiór w 22 miastach")'>
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="addAffiliate(${id})">+ Dodaj sklep</button>
+            ` : '<p style="color:#bbb;font-size:13px">Najpierw dodaj sklepy w zakładce <strong>Afiliacja</strong>.</p>'}
+          </div>
+        </div>
+
       </div>
     </div>
   `;
@@ -663,6 +750,116 @@ async function deleteFeature(featId, productId) {
   if (!featId || !confirm('Usunąć tę cechę?')) return;
   await api(`/api/admin/features/${featId}`, {method:'DELETE'});
   openProductPage(productId);
+}
+
+// ── AFFILIATE: product links ───────────────────────────────────
+async function addAffiliate(productId) {
+  const body = {
+    shop_id: document.getElementById('aff-shop').value,
+    product_url: document.getElementById('aff-url').value.trim(),
+    price_pln: document.getElementById('aff-price').value || null,
+    price_with_shipping: document.getElementById('aff-ship').value || null,
+    delivery_time: document.getElementById('aff-time').value.trim() || null,
+    delivery_note: document.getElementById('aff-note').value.trim() || null,
+  };
+  if (!body.shop_id || !body.product_url) { alert('Wybierz sklep i podaj URL'); return; }
+  const r = await api(`/api/admin/affiliates/product/${productId}`, {method:'POST', body: JSON.stringify(body)});
+  if (r?.id) openProductPage(productId);
+  else alert(r?.error || 'Błąd');
+}
+
+async function deleteAffiliate(affId, productId) {
+  if (!confirm('Usunąć sklep partnerski?')) return;
+  await api(`/api/admin/affiliates/${affId}`, {method:'DELETE'});
+  openProductPage(productId);
+}
+
+// ── AFFILIATE: shops tab ───────────────────────────────────────
+async function renderAffiliates() {
+  const content = document.getElementById('content');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary" onclick="openShopModal()">+ Dodaj sklep</button>`;
+  content.innerHTML = '<p style="color:#888;padding:20px">Ładowanie...</p>';
+
+  const shops = await api('/api/admin/affiliates/shops');
+  if (!shops) return;
+
+  content.innerHTML = `
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Nazwa</th><th>Logo</th><th>Kolejność</th><th>Status</th><th>Akcje</th>
+          </tr></thead>
+          <tbody>${shops.length ? shops.map(s => `
+            <tr>
+              <td>${s.id}</td>
+              <td><strong>${escHtml(s.name)}</strong></td>
+              <td>${s.logo_url
+                ? `<div style="display:flex;align-items:center;gap:8px">
+                     <img src="${escHtml(s.logo_url)}" style="max-height:28px;max-width:80px;object-fit:contain">
+                     <span style="font-size:11px;color:#aaa;word-break:break-all;max-width:180px">${escHtml(s.logo_url)}</span>
+                   </div>`
+                : '—'}</td>
+              <td>${s.sort_order}</td>
+              <td><span class="badge ${s.is_active?'badge-green':'badge-red'}">${s.is_active?'Aktywny':'Nieaktywny'}</span></td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-secondary btn-sm" onclick="openShopModal(${s.id})">Edytuj</button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleShop(${s.id})">${s.is_active?'Dezakt.':'Aktywuj'}</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteShop(${s.id},'${escHtml(s.name)}')">Usuń</button>
+              </td>
+            </tr>`).join('')
+            : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">Brak sklepów. Dodaj pierwszy sklep partnerski.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function openShopModal(id) {
+  let shop = null;
+  if (id) {
+    const shops = await api('/api/admin/affiliates/shops');
+    shop = shops?.find(s => s.id === id);
+  }
+  showModal(id ? 'Edytuj sklep' : 'Dodaj sklep', `
+    <div class="form-group">
+      <label>Nazwa sklepu *</label>
+      <input class="form-control" id="s-name" value="${escHtml(shop?.name||'')}">
+    </div>
+    <div class="form-group">
+      <label>URL logo (obrazek)</label>
+      <input class="form-control" id="s-logo" placeholder="https://..." value="${escHtml(shop?.logo_url||'')}">
+    </div>
+    <div class="form-group">
+      <label>Kolejność (niższy = wyżej)</label>
+      <input class="form-control" id="s-order" type="number" value="${shop?.sort_order||0}">
+    </div>
+  `, async () => {
+    const body = {
+      name: document.getElementById('s-name').value.trim(),
+      logo_url: document.getElementById('s-logo').value.trim() || null,
+      sort_order: parseInt(document.getElementById('s-order').value) || 0,
+    };
+    if (!body.name) { alert('Podaj nazwę sklepu'); return; }
+    const url = id ? `/api/admin/affiliates/shops/${id}` : '/api/admin/affiliates/shops';
+    const r = await api(url, {method: id?'PUT':'POST', body: JSON.stringify(body)});
+    if (r?.id) { closeModal(); renderAffiliates(); }
+    else alert(r?.error || 'Błąd');
+  });
+}
+
+async function toggleShop(id) {
+  await api(`/api/admin/affiliates/shops/${id}/toggle`, {method:'PATCH'});
+  renderAffiliates();
+}
+
+async function deleteShop(id, name) {
+  if (!confirm(`Usunąć sklep "${name}"? Usunie też wszystkie linki afiliacyjne tego sklepu.`)) return;
+  const r = await api(`/api/admin/affiliates/shops/${id}`, {method:'DELETE'});
+  if (r?.ok) renderAffiliates();
+  else alert(r?.error || 'Błąd');
 }
 
 // ── CATEGORIES ────────────────────────────────────────────────

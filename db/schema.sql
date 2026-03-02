@@ -81,3 +81,28 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL
 );
+
+-- Sklepy afiliacyjne
+CREATE TABLE IF NOT EXISTS affiliate_shops (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  logo_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Linki afiliacyjne produktów
+CREATE TABLE IF NOT EXISTS product_affiliates (
+  id SERIAL PRIMARY KEY,
+  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  shop_id INT NOT NULL REFERENCES affiliate_shops(id) ON DELETE CASCADE,
+  product_url TEXT NOT NULL,
+  price_pln NUMERIC(10,2),
+  price_with_shipping NUMERIC(10,2),
+  delivery_time TEXT,
+  delivery_note TEXT,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(product_id, shop_id)
+);
