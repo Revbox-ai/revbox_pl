@@ -111,4 +111,24 @@ router.patch('/users/:id/toggle', requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/features/:id
+router.delete('/features/:id', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'DELETE FROM product_features WHERE id=$1 RETURNING id, feature_en',
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Nie znaleziono' });
+    await db.query(
+      `INSERT INTO activity_logs (user_id, username, action, entity_type, entity_id, ip_address)
+       VALUES ($1,$2,'delete_feature','product_feature',$3,$4)`,
+      [req.adminUser.user_id, req.adminUser.username, String(req.params.id), req.ip]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
 module.exports = router;

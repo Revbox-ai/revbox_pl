@@ -92,7 +92,7 @@ router.get('/:id', async (req, res) => {
 
     const product = rows[0];
     const { rows: features } = await db.query(
-      `SELECT feature_en, sentiment, mention_count, sample_quote
+      `SELECT id, feature_en, sentiment, mention_count, sample_quote
        FROM product_features WHERE product_id = $1
        ORDER BY mention_count DESC LIMIT 30`,
       [product.id]
