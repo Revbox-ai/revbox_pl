@@ -179,23 +179,30 @@ let currentSection = 'dashboard';
 
 // ── AUTH ──────────────────────────────────────────────────────
 async function doLogin() {
-  const user = document.getElementById('l-user').value.trim();
-  const pass = document.getElementById('l-pass').value;
+  const userEl = document.getElementById('l-user');
+  const passEl = document.getElementById('l-pass');
+  const user = userEl.value.trim();
+  const pass = passEl.value;
   const err = document.getElementById('login-err');
   err.classList.add('hidden');
+
+  if (!user) { err.textContent = 'Wpisz login'; err.classList.remove('hidden'); userEl.focus(); return; }
+  if (!pass) { err.textContent = 'Wpisz hasło'; err.classList.remove('hidden'); passEl.focus(); return; }
+
   try {
     const r = await fetch('/api/admin/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({username:user, password:pass})
     });
     const d = await r.json();
-    if (!r.ok) { err.textContent = d.error; err.classList.remove('hidden'); return; }
+    if (!r.ok) { err.textContent = d.error || 'Błąd logowania'; err.classList.remove('hidden'); return; }
     currentUser = d;
     document.getElementById('sidebar-user').textContent = d.username;
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     goto('dashboard');
-  } catch(e) { err.textContent = 'Błąd połączenia'; err.classList.remove('hidden'); }
+  } catch(e) { err.textContent = 'Błąd połączenia z serwerem'; err.classList.remove('hidden'); }
 }
 
 async function doLogout() {
