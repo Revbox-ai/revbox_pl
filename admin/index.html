@@ -593,9 +593,15 @@ async function openProductPage(id) {
       <div>
         <div class="card">
           <div class="card-title">Dane produktu</div>
-          <div class="form-group">
-            <label>SKU</label>
-            <input class="form-control" id="f-sku" value="${escHtml(prod.sku)}" readonly style="background:#f8f9fa;color:#888">
+          <div class="form-row">
+            <div class="form-group">
+              <label>ID <span style="color:#bbb;font-weight:400;font-size:11px">(niezmienialny)</span></label>
+              <input class="form-control" value="${prod.id}" readonly style="background:#f8f9fa;color:#aaa">
+            </div>
+            <div class="form-group">
+              <label>SKU</label>
+              <input class="form-control" id="f-sku" value="${escHtml(prod.sku||'')}">
+            </div>
           </div>
           <div class="form-group">
             <label>Nazwa *</label>
@@ -745,6 +751,7 @@ async function saveSeoText(id) {
   const r = await api(`/api/admin/products/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
+      sku: document.getElementById('f-sku').value.trim(),
       name_pl: document.getElementById('f-name').value.trim(),
       category_id: document.getElementById('f-cat').value || null,
       price_eur: document.getElementById('f-price-eur').value || null,
@@ -764,6 +771,7 @@ async function saveSeoText(id) {
 
 async function saveProductPage(id) {
   const body = {
+    sku: document.getElementById('f-sku').value.trim(),
     name_pl: document.getElementById('f-name').value.trim(),
     category_id: document.getElementById('f-cat').value || null,
     price_eur: document.getElementById('f-price-eur').value || null,
