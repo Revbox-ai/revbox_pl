@@ -932,7 +932,7 @@ button { cursor: pointer; }
   border: 0;
   border-radius: 50%;
   background:
-    radial-gradient(closest-side, #fff 81%, transparent 82% 100%),
+    radial-gradient(closest-side, #fff 87%, transparent 88% 100%),
     conic-gradient(var(--accent) calc(var(--score) * 1%), #e2e2e2 0);
 }
 
@@ -1926,7 +1926,7 @@ button { cursor: pointer; }
   border-color: var(--accent);
 }
 .match-ring-empty {
-  background: radial-gradient(closest-side, #fff 81%, transparent 82% 100%), conic-gradient(var(--accent) 0 100%);
+  background: radial-gradient(closest-side, #fff 87%, transparent 88% 100%), conic-gradient(var(--accent) 0 100%);
 }
 .match-ring-empty > span {
   color: var(--accent-dark);
