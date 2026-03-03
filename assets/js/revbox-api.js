@@ -80,22 +80,74 @@
     const categorySlug = getUrlParam('category') || '';
     const search = getUrlParam('search') || '';
     let currentPage = parseInt(getUrlParam('page')) || 1;
+    let priceMin = getUrlParam('price_min') ? parseFloat(getUrlParam('price_min')) : null;
+    let priceMax = getUrlParam('price_max') ? parseFloat(getUrlParam('price_max')) : null;
 
     // Load categories into sidebar
     const categories = await fetchCategories();
     renderCategorySidebar(categories, categorySlug);
 
     // Update title from category
+    let activeCat = null;
     if (categorySlug && categories) {
-      const cat = categories.find(c => c.slug === categorySlug);
-      if (cat) {
+      activeCat = categories.find(c => c.slug === categorySlug);
+      if (activeCat) {
         const h1 = document.querySelector('.page-title');
-        if (h1) h1.textContent = cat.name_pl;
-        document.title = `Revbox - ${cat.name_pl}`;
+        if (h1) h1.textContent = activeCat.name_pl;
+        document.title = `Revbox - ${activeCat.name_pl}`;
         const breadcrumb = document.querySelector('.breadcrumbs');
-        if (breadcrumb) breadcrumb.textContent = `Produkty / ${cat.name_pl}`;
+        if (breadcrumb) breadcrumb.textContent = `Produkty / ${activeCat.name_pl}`;
       }
     }
+
+    // Price filter inputs
+    const priceMinInput = document.getElementById('price-min');
+    const priceMaxInput = document.getElementById('price-max');
+    const priceFilterBtn = document.getElementById('price-filter-btn');
+    const priceFilterClear = document.getElementById('price-filter-clear');
+
+    if (priceMinInput && priceMin) priceMinInput.value = priceMin;
+    if (priceMaxInput && priceMax) priceMaxInput.value = priceMax;
+    if (priceFilterClear && (priceMin || priceMax)) priceFilterClear.style.display = '';
+
+    priceFilterBtn?.addEventListener('click', () => {
+      priceMin = priceMinInput.value ? parseFloat(priceMinInput.value) : null;
+      priceMax = priceMaxInput.value ? parseFloat(priceMaxInput.value) : null;
+      if (priceFilterClear) priceFilterClear.style.display = (priceMin || priceMax) ? '' : 'none';
+      renderFilterTags(activeCat, priceMin, priceMax);
+      updateBucketActive(priceMax);
+      loadCategoryProducts(grid, categorySlug, search, 1, priceMin, priceMax);
+    });
+
+    priceFilterClear?.addEventListener('click', () => {
+      priceMin = null; priceMax = null;
+      if (priceMinInput) priceMinInput.value = '';
+      if (priceMaxInput) priceMaxInput.value = '';
+      priceFilterClear.style.display = 'none';
+      renderFilterTags(activeCat, null, null);
+      updateBucketActive(null);
+      loadCategoryProducts(grid, categorySlug, search, 1, null, null);
+    });
+
+    // Bucket buttons
+    document.getElementById('bucket-grid')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-price-max]');
+      if (!btn) return;
+      const max = parseFloat(btn.dataset.priceMax);
+      // Toggle off if already active
+      if (priceMax === max && !priceMin) {
+        priceMax = null;
+      } else {
+        priceMax = max;
+        priceMin = null;
+        if (priceMinInput) priceMinInput.value = '';
+      }
+      if (priceMaxInput) priceMaxInput.value = priceMax || '';
+      if (priceFilterClear) priceFilterClear.style.display = priceMax ? '' : 'none';
+      renderFilterTags(activeCat, priceMin, priceMax);
+      updateBucketActive(priceMax);
+      loadCategoryProducts(grid, categorySlug, search, 1, priceMin, priceMax);
+    });
 
     // Hook search bar
     const searchInput = document.querySelector('.search-bar input[type="search"]');
@@ -110,23 +162,55 @@
       searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
     }
 
+    // Render initial state
+    renderFilterTags(activeCat, priceMin, priceMax);
+    updateBucketActive(priceMax);
+
     // Load products
-    await loadCategoryProducts(grid, categorySlug, search, currentPage);
+    await loadCategoryProducts(grid, categorySlug, search, currentPage, priceMin, priceMax);
 
     // Pagination
     document.querySelector('nav.pagination')?.addEventListener('click', e => {
       if (e.target.tagName === 'A') {
         e.preventDefault();
         const p = parseInt(e.target.dataset.page);
-        if (p) loadCategoryProducts(grid, categorySlug, search, p);
+        if (p) loadCategoryProducts(grid, categorySlug, search, p, priceMin, priceMax);
       }
     });
   }
 
-  async function loadCategoryProducts(grid, categorySlug, search, page) {
+  function renderFilterTags(cat, priceMin, priceMax) {
+    const container = document.querySelector('.filter-tags');
+    if (!container) return;
+    const tags = [];
+    if (cat) {
+      tags.push(`<span style="cursor:pointer" onclick="window.location.href='category.html'">${escHtml(cat.name_pl)} ×</span>`);
+    }
+    if (priceMin && priceMax) {
+      tags.push(`<span>${priceMin} – ${priceMax} zł</span>`);
+    } else if (priceMax) {
+      tags.push(`<span>do ${priceMax} zł</span>`);
+    } else if (priceMin) {
+      tags.push(`<span>od ${priceMin} zł</span>`);
+    }
+    container.innerHTML = tags.join('');
+    const head = container.closest('.section-head')?.querySelector('.eyebrow');
+    if (head) head.textContent = 'Produkty';
+  }
+
+  function updateBucketActive(priceMax) {
+    document.querySelectorAll('#bucket-grid .bucket-btn').forEach(btn => {
+      btn.classList.toggle('active', priceMax !== null && parseFloat(btn.dataset.priceMax) === priceMax);
+    });
+  }
+
+  async function loadCategoryProducts(grid, categorySlug, search, page, priceMin, priceMax) {
     grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Ładowanie produktów...</p>';
     try {
-      const data = await fetchProducts({ category: categorySlug, search, page, limit: 24 });
+      const params = { category: categorySlug, search, page, limit: 24 };
+      if (priceMin) params.price_pln_min = priceMin;
+      if (priceMax) params.price_pln_max = priceMax;
+      const data = await fetchProducts(params);
       if (!data.products?.length) {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Brak produktów w tej kategorii.</p>';
         return;

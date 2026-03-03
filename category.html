@@ -51,6 +51,17 @@
         <div class="feature-list" data-render="features"></div>
         <button class="btn btn-light btn-full" data-load-features>Load more</button>
       </section>
+
+      <section class="feature-panel card" id="price-filter-panel">
+        <div class="feature-panel-head"><h2>Cena (PLN)</h2></div>
+        <div style="display:flex;gap:8px;align-items:center;padding:0 0 12px">
+          <input id="price-min" type="number" min="0" placeholder="od" style="width:100%;padding:7px 10px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px">
+          <span style="color:#aaa;flex-shrink:0">–</span>
+          <input id="price-max" type="number" min="0" placeholder="do" style="width:100%;padding:7px 10px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px">
+        </div>
+        <button class="btn btn-primary btn-full" id="price-filter-btn">Zastosuj filtr</button>
+        <button class="btn btn-light btn-full" id="price-filter-clear" style="margin-top:6px;display:none">Wyczyść filtr ceny</button>
+      </section>
     </aside>
 
     <section class="content-column">
@@ -65,11 +76,11 @@
         </div>
       </div>
 
-      <div class="bucket-grid">
-        <button class="bucket-btn active">Smartphony do 200zł</button>
-        <button class="bucket-btn">Smartphony do 500zł</button>
-        <button class="bucket-btn">Smartphony do 1000zł</button>
-        <button class="bucket-btn">Smartphony do 2000zł</button>
+      <div class="bucket-grid" id="bucket-grid">
+        <button class="bucket-btn" data-price-max="200">Produkty do 200 zł</button>
+        <button class="bucket-btn" data-price-max="500">Produkty do 500 zł</button>
+        <button class="bucket-btn" data-price-max="1000">Produkty do 1000 zł</button>
+        <button class="bucket-btn" data-price-max="2000">Produkty do 2000 zł</button>
       </div>
 
       <section class="product-grid" data-render="category-products"></section>
