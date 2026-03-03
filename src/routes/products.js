@@ -171,16 +171,16 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { name_pl, name_en, category_id, price_eur, price_pln,
-            url, description_pl, description_en, is_active, is_featured, priority, image_url, source } = req.body;
+            url, description_pl, description_en, is_active, is_featured, priority, image_url, source, seo_text_pl } = req.body;
     const { rows } = await db.query(
       `UPDATE products SET name_pl=$1, name_en=$2, category_id=$3, price_eur=$4, price_pln=$5,
          url=$6, description_pl=$7, description_en=$8, is_active=$9, is_featured=$10,
-         priority=$11, image_url=$12, source=$13, updated_at=NOW()
-       WHERE id=$14 RETURNING *`,
+         priority=$11, image_url=$12, source=$13, seo_text_pl=$14, updated_at=NOW()
+       WHERE id=$15 RETURNING *`,
       [name_pl, name_en || null, category_id || null, price_eur || null, price_pln || null,
        url || null, description_pl || null, description_en || null,
        is_active !== false, !!is_featured, priority || 0, image_url || null,
-       source || null, req.params.id]
+       source || null, seo_text_pl || null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Nie znaleziono' });
     await log(req, 'update_product', req.params.id, { name: name_pl });

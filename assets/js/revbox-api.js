@@ -243,6 +243,17 @@
     document.querySelectorAll('.sidebar .page-title').forEach(el => { el.textContent = name; });
     document.querySelectorAll('.summary-box h2').forEach(el => { el.textContent = `Recenzja ${name}`; });
     document.querySelectorAll('.seo-box h2').forEach(el => { el.textContent = `Co o ${name} mówią użytkownicy`; });
+    if (p.seo_text_pl) {
+      const seoBox = document.querySelector('.seo-box');
+      if (seoBox) {
+        const h2 = seoBox.querySelector('h2');
+        seoBox.innerHTML = '';
+        if (h2) seoBox.appendChild(h2);
+        const article = document.createElement('article');
+        article.innerHTML = `<p>${escHtml(p.seo_text_pl).replace(/\n/g, '<br>')}</p>`;
+        seoBox.appendChild(article);
+      }
+    }
     document.querySelectorAll('.breadcrumbs').forEach(el => {
       el.textContent = `Produkty / ${p.category_name || 'Wszystkie'} / ${name}`;
     });
