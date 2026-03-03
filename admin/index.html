@@ -102,6 +102,13 @@ tr:hover td{background:#fafafa}
 .feat-count{font-size:11px;color:#888;min-width:50px;text-align:right}
 .feat-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
 .feat-del:hover{color:#f44336}
+.feat-quotes-btn{background:none;border:1px solid #d0d0d0;color:#666;cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.feat-quotes-btn:hover{background:#f0f0f0;border-color:#999}
+.feat-quotes-btn.open{background:#fff3e0;border-color:#f7b321;color:#e65100}
+.quotes-panel{background:#fafafa;border-top:1px solid #f0f0f0;padding:10px 14px;max-height:260px;overflow-y:auto;font-size:12px}
+.quotes-panel .qrow{padding:5px 0;border-bottom:1px solid #f0f0f0;color:#444;line-height:1.5}
+.quotes-panel .qrow:last-child{border-bottom:none}
+.quotes-panel .q-empty{color:#bbb;padding:4px 0}
 .feat-empty{padding:20px;text-align:center;color:#bbb;font-size:13px}
 /* Toggle */
 .toggle{position:relative;width:40px;height:22px;display:inline-block}
@@ -540,12 +547,15 @@ async function openProductPage(id) {
 
   function featRow(f, col) {
     const pct = Math.min(100, Math.round((f.mention_count/maxCount)*100));
+    const qid = `q-${f.id}`;
     return `<div class="feature-row">
       <span class="feat-name">${escHtml(f.feature_en)}</span>
       <div class="feat-bar-wrap ${col}"><div class="feat-bar" style="width:${pct}%"></div></div>
       <span class="feat-count">${f.mention_count} wzm.</span>
+      <button class="feat-quotes-btn" id="btn-${qid}" onclick="toggleQuotes(${id},'${escHtml(f.feature_en).replace(/'/g,"\\'")}','${qid}')">Cytaty</button>
       <button class="feat-del" onclick="deleteFeature(${f.id || ''},${id})" title="Usuń">×</button>
-    </div>`;
+    </div>
+    <div class="quotes-panel" id="${qid}" style="display:none"></div>`;
   }
 
   function affRow(a) {
@@ -750,6 +760,33 @@ async function deleteFeature(featId, productId) {
   if (!featId || !confirm('Usunąć tę cechę?')) return;
   await api(`/api/admin/features/${featId}`, {method:'DELETE'});
   openProductPage(productId);
+}
+
+async function toggleQuotes(productId, featureName, panelId) {
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById('btn-' + panelId);
+  if (!panel) return;
+  const open = panel.style.display !== 'none';
+  if (open) {
+    panel.style.display = 'none';
+    btn.classList.remove('open');
+    return;
+  }
+  panel.style.display = 'block';
+  btn.classList.add('open');
+  if (panel.dataset.loaded) return;
+  panel.innerHTML = '<span class="q-empty">Ładowanie...</span>';
+  try {
+    const rows = await api(`/api/products/${productId}/quotes?feature=${encodeURIComponent(featureName)}`);
+    if (!rows.length) {
+      panel.innerHTML = '<span class="q-empty">Brak cytatów</span>';
+    } else {
+      panel.innerHTML = rows.map(q => `<div class="qrow">"${escHtml(q.quote_en)}"</div>`).join('');
+    }
+    panel.dataset.loaded = '1';
+  } catch(e) {
+    panel.innerHTML = '<span class="q-empty" style="color:#f44336">Błąd ładowania</span>';
+  }
 }
 
 // ── AFFILIATE: product links ───────────────────────────────────
