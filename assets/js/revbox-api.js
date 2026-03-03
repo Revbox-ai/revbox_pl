@@ -52,24 +52,23 @@
     return r.json();
   }
 
-  // ── PRODUCT CARD (kompatybilny z app.js productCard) ──────
+  // ── PRODUCT CARD — identyczna struktura jak app.js productCard() ──────
   function apiProductCard(p) {
-    const price = formatPrice(p.price_pln, p.price_eur);
     const img = p.image_url || placeholderImg(p.id);
     const name = escHtml(p.name_pl || p.name_en);
-    const cat = escHtml(p.category_name || '');
+    const featureCount = parseInt(p.feature_count) || 0;
+    const price = formatPrice(p.price_pln, p.price_eur);
     return `
       <article class="product-card product-card-no-score">
-        <a href="product.html?id=${p.id}" class="product-card-link">
-          <div class="card-img-wrap">
-            <img src="${img}" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGES[0]}'">
-          </div>
-          <div class="card-body">
-            <div class="card-meta">${cat}</div>
-            <h3 class="card-title">${name}</h3>
-            <div class="card-price">${price}</div>
-          </div>
-        </a>
+        <div class="product-card-head">
+          <div class="match-label"><button class="match-help-trigger" data-modal="matchInfo" aria-label="Informacje o match score">?</button><span>Your match score</span></div>
+          <button class="match-ring match-ring-empty match-ring-trigger" data-modal="noProfileInfo" aria-label="Dlaczego nie widzę match score?"><span>?</span></button>
+        </div>
+        <img class="product-image" src="${img}" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGES[0]}'">
+        <h3>${name}</h3>
+        <div class="meta"><span>Cechy</span><strong>${featureCount > 0 ? featureCount : '—'}</strong></div>
+        <div class="price-line">${price}</div>
+        <div class="card-actions"><a class="btn btn-outline" href="product.html?id=${p.id}">Zobacz recenzję</a></div>
       </article>`;
   }
 
