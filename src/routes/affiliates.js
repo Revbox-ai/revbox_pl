@@ -133,11 +133,11 @@ adminRouter.put('/:id', requireAdmin, async (req, res) => {
     const { shop_id, product_url, price_pln, price_with_shipping, delivery_time, delivery_note, sort_order } = req.body;
     const { rows } = await db.query(
       `UPDATE product_affiliates
-       SET shop_id=$1, product_url=$2, price_pln=$3, price_with_shipping=$4,
-           delivery_time=$5, delivery_note=$6, sort_order=$7
+       SET shop_id=COALESCE($1, shop_id), product_url=$2, price_pln=$3, price_with_shipping=$4,
+           delivery_time=$5, delivery_note=$6, sort_order=COALESCE($7, sort_order)
        WHERE id=$8 RETURNING *`,
-      [shop_id, product_url, price_pln || null, price_with_shipping || null,
-       delivery_time || null, delivery_note || null, sort_order || 0, req.params.id]
+      [shop_id || null, product_url, price_pln || null, price_with_shipping || null,
+       delivery_time || null, delivery_note || null, sort_order ?? null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Nie znaleziono' });
     res.json(rows[0]);

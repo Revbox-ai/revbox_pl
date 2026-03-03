@@ -574,7 +574,21 @@ async function openProductPage(id) {
       </div>
       <div style="display:flex;gap:6px">
         <a href="${escHtml(a.product_url)}" target="_blank" class="btn btn-secondary btn-sm">↗</a>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAffEdit(${a.id})">Edytuj</button>
         <button class="btn btn-danger btn-sm" onclick="deleteAffiliate(${a.id},${id})">Usuń</button>
+      </div>
+    </div>
+    <div class="aff-edit-form" id="aff-edit-${a.id}" style="display:none;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:8px">
+      <div class="aff-add-grid">
+        <input class="form-control" id="ae-url-${a.id}" placeholder="URL produktu" value="${escHtml(a.product_url||'')}">
+        <input class="form-control" id="ae-price-${a.id}" type="number" step="0.01" placeholder="Cena PLN" value="${a.price_pln||''}">
+        <input class="form-control" id="ae-ship-${a.id}" type="number" step="0.01" placeholder="Z wysyłką PLN" value="${a.price_with_shipping||''}">
+        <input class="form-control" id="ae-time-${a.id}" placeholder='Czas dostawy' value="${escHtml(a.delivery_time||'')}">
+        <input class="form-control" id="ae-note-${a.id}" placeholder='Nota' value="${escHtml(a.delivery_note||'')}">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveAffiliate(${a.id},${id})">Zapisz</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAffEdit(${a.id})">Anuluj</button>
       </div>
     </div>`;
   }
@@ -850,6 +864,24 @@ async function addAffiliate(productId) {
 async function deleteAffiliate(affId, productId) {
   if (!confirm('Usunąć sklep partnerski?')) return;
   await api(`/api/admin/affiliates/${affId}`, {method:'DELETE'});
+  openProductPage(productId);
+}
+
+function toggleAffEdit(affId) {
+  const form = document.getElementById('aff-edit-' + affId);
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveAffiliate(affId, productId) {
+  const body = {
+    product_url: document.getElementById(`ae-url-${affId}`).value.trim(),
+    price_pln: document.getElementById(`ae-price-${affId}`).value || null,
+    price_with_shipping: document.getElementById(`ae-ship-${affId}`).value || null,
+    delivery_time: document.getElementById(`ae-time-${affId}`).value.trim() || null,
+    delivery_note: document.getElementById(`ae-note-${affId}`).value.trim() || null,
+  };
+  if (!body.product_url) { alert('URL jest wymagany'); return; }
+  await api(`/api/admin/affiliates/${affId}`, {method:'PUT', body: JSON.stringify(body)});
   openProductPage(productId);
 }
 
