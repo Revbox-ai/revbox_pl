@@ -945,10 +945,10 @@ button { cursor: pointer; }
   border-radius: 50%;
   background: #fff;
   mask-image:
-    radial-gradient(closest-side, transparent 81%, #000 82%, #000 87%, transparent 88%),
+    radial-gradient(closest-side, transparent 81%, #000 82%, #000 95%, transparent 96%),
     conic-gradient(transparent calc(var(--score) * 1%), #000 0);
   -webkit-mask-image:
-    radial-gradient(closest-side, transparent 81%, #000 82%, #000 87%, transparent 88%),
+    radial-gradient(closest-side, transparent 81%, #000 82%, #000 95%, transparent 96%),
     conic-gradient(transparent calc(var(--score) * 1%), #000 0);
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
