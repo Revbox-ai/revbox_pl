@@ -56,7 +56,7 @@
   function apiProductCard(p) {
     const img = p.image_url || placeholderImg(p.id);
     const name = escHtml(p.name_pl || p.name_en);
-    const featureCount = parseInt(p.feature_count) || 0;
+    const revboxScore = p.revbox_score != null ? Math.round(parseFloat(p.revbox_score)) : null;
     const totalMentions = parseInt(p.total_mentions) || 0;
     return `
       <article class="product-card product-card-no-score">
@@ -66,7 +66,7 @@
         </div>
         <img class="product-image" src="${img}" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGES[0]}'">
         <h3>${name}</h3>
-        <div class="meta-wrap"><button class="score-help-btn" data-score-help="1" aria-label="Co to jest Revbox Score?">?</button><div class="meta"><span>Revbox score</span><strong>${featureCount > 0 ? featureCount + '%' : '—'}</strong></div></div>
+        <div class="meta-wrap"><button class="score-help-btn" data-score-help="1" aria-label="Co to jest Revbox Score?">?</button><div class="meta"><span>Revbox score</span><strong>${revboxScore !== null ? revboxScore + '%' : '—'}</strong></div></div>
         <div class="price-line">Przeanalizowano <strong>${totalMentions > 0 ? totalMentions.toLocaleString('pl') : '—'}</strong> wzmianek</div>
         <div class="card-actions"><a class="btn btn-outline" href="product.html?id=${p.id}">Zobacz recenzję</a></div>
       </article>`;
@@ -376,6 +376,12 @@
     const totalMentions = (p.features || []).reduce((s, f) => s + (f.mention_count || 0), 0);
     document.querySelectorAll('.summary-note strong').forEach(el => {
       el.textContent = totalMentions.toLocaleString('pl');
+    });
+
+    // Revbox score
+    const revboxScore = p.revbox_score != null ? Math.round(parseFloat(p.revbox_score)) : null;
+    document.querySelectorAll('.summary-score-row strong').forEach(el => {
+      el.textContent = revboxScore !== null ? `Revbox score ${revboxScore}%` : 'Revbox score —';
     });
 
     // Features (pros/cons)

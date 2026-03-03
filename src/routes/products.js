@@ -66,7 +66,7 @@ router.get('/', async (req, res) => {
     const { rows } = await db.query(
       `SELECT p.id, p.sku, p.name_pl, p.name_en, p.price_eur, p.price_pln,
               p.is_active, p.is_featured, p.priority, p.image_url,
-              p.description_pl, p.url, p.source, p.created_at,
+              p.description_pl, p.url, p.source, p.created_at, p.revbox_score,
               c.name_pl AS category_name, c.slug AS category_slug,
               (SELECT COUNT(*) FROM product_features pf WHERE pf.product_id = p.id) AS feature_count,
               (SELECT COALESCE(SUM(pf2.mention_count), 0) FROM product_features pf2 WHERE pf2.product_id = p.id) AS total_mentions
