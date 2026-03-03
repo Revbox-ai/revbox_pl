@@ -27,6 +27,7 @@ const categoriesRoutes = require('./src/routes/categories');
 const productsRoutes = require('./src/routes/products');
 const adminRoutes = require('./src/routes/admin');
 const affiliatesRoutes = require('./src/routes/affiliates');
+const preferencesRoutes = require('./src/routes/preferences');
 const { requireAdmin } = require('./src/middleware/auth');
 
 app.use('/api/admin/auth', authRoutes);
@@ -35,6 +36,8 @@ app.use('/api/products', productsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/affiliates', affiliatesRoutes.public);
 app.use('/api/admin/affiliates', affiliatesRoutes.admin);
+app.use('/api/features', preferencesRoutes);
+app.use('/api/preferences', preferencesRoutes);
 
 // Admin CRUD for categories and products (require auth)
 app.use('/api/admin/categories', categoriesRoutes);

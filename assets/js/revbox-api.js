@@ -35,6 +35,115 @@
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // ── SESSION (anonimowy UUID zapisany w localStorage) ──────
+  function getSessionId() {
+    let sid = localStorage.getItem('revbox_sid');
+    if (!sid) {
+      sid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          });
+      localStorage.setItem('revbox_sid', sid);
+    }
+    return sid;
+  }
+
+  // ── MATCH SCORE (identyczny algorytm jak src/services/matchScore.js) ──
+  function calculateMatchScore(features, opts = {}) {
+    const lf = opts.lambdaFeature ?? 0.05;
+    const lp = opts.lambdaProduct  ?? 0.01;
+    const beta = opts.beta          ?? 0.10;
+    let wSum = 0, wTotal = 0, totalOp = 0;
+    for (const f of features) {
+      const pos = Math.max(0, Number(f.positive || 0));
+      const neg = Math.max(0, Number(f.negative || 0));
+      const w   = Math.max(0, Number(f.weight  ?? 1));
+      const tot = pos + neg;
+      totalOp += tot;
+      let sent = 0, conf = 0;
+      if (tot > 0) { sent = (pos - neg) / tot; conf = 1 - Math.exp(-lf * tot); }
+      wSum   += w * sent * conf;
+      wTotal += w;
+    }
+    const raw   = wTotal > 0 ? wSum / wTotal : 0;
+    const power = totalOp > 0 ? 1 - Math.exp(-lp * totalOp) : 0;
+    const final = raw * (1 + beta * power);
+    const clamped = Math.max(-1, Math.min(1, final));
+    return Math.round(((clamped + 1) / 2) * 100);
+  }
+
+  // ── PREFERENCES API ────────────────────────────────────────
+  async function loadCategoryFeatures(categoryId) {
+    try {
+      const r = await fetch(`${BASE}/api/features/category/${categoryId}`);
+      return r.ok ? r.json() : [];
+    } catch { return []; }
+  }
+
+  async function loadUserPrefs(sessionId, categoryId) {
+    try {
+      const r = await fetch(`${BASE}/api/preferences/${sessionId}/${categoryId}`);
+      return r.ok ? r.json() : [];
+    } catch { return []; }
+  }
+
+  async function togglePreference(sessionId, categoryId, featureEn, enabled) {
+    try {
+      await fetch(`${BASE}/api/preferences/${sessionId}/${categoryId}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feature_en: featureEn, enabled }),
+      });
+    } catch { /* ignoruj błędy sieciowe */ }
+  }
+
+  // Renderuje listę cech z toggleami w podanym kontenerze.
+  // Zwraca aktualny Set zaznaczonych cech.
+  function renderFeatureToggles(container, features, userPrefs, categoryId, sessionId, onChangeCallback) {
+    if (!container) return new Set();
+    const prefSet = new Set(userPrefs);
+    const SHOW = 8;
+    let expanded = false;
+
+    const render = () => {
+      container.innerHTML = features.map((f, i) => `
+        <label class="feature-item${!expanded && i >= SHOW ? ' hidden-feature' : ''}">
+          <input type="checkbox" value="${escHtml(f.feature_en)}" ${prefSet.has(f.feature_en) ? 'checked' : ''}>
+          <span>${escHtml(f.feature_en)}<small class="feature-mention-count"> · ${Number(f.total_mentions).toLocaleString('pl')}</small></span>
+        </label>`).join('');
+
+      container.querySelectorAll('input[type=checkbox]').forEach(input => {
+        input.addEventListener('change', async () => {
+          const fn = input.value;
+          input.checked ? prefSet.add(fn) : prefSet.delete(fn);
+          await togglePreference(sessionId, categoryId, fn, input.checked);
+          if (typeof onChangeCallback === 'function') onChangeCallback(prefSet);
+        });
+      });
+    };
+
+    render();
+
+    const panel = container.closest('.feature-panel');
+    const loadMoreBtn = panel?.querySelector('[data-load-features]');
+    if (loadMoreBtn) {
+      if (features.length > SHOW) {
+        loadMoreBtn.style.display = '';
+        loadMoreBtn.onclick = () => {
+          expanded = !expanded;
+          loadMoreBtn.textContent = expanded ? 'Pokaż mniej' : 'Load more';
+          render();
+        };
+      } else {
+        loadMoreBtn.style.display = 'none';
+      }
+    }
+
+    return prefSet;
+  }
+
   // ── API HELPERS ────────────────────────────────────────────
   async function fetchProducts(params = {}) {
     const qs = new URLSearchParams(params).toString();
@@ -59,7 +168,7 @@
     const matchScore = p.match_score != null ? Math.round(parseFloat(p.match_score)) : null;
     const totalMentions = parseInt(p.total_mentions) || 0;
     return `
-      <article class="product-card product-card-no-score">
+      <article class="product-card product-card-no-score" data-product-id="${p.id}">
         <div class="product-card-head">
           <div class="match-label"><button class="match-help-trigger" data-modal="matchInfo" aria-label="Informacje o match score">?</button><span>Your match score</span></div>
           <button class="match-ring match-ring-empty match-ring-trigger" data-modal="noProfileInfo" aria-label="Dlaczego nie widzę match score?"><span>?</span></button>
@@ -97,6 +206,28 @@
         document.title = `Revbox - ${activeCat.name_pl}`;
         const breadcrumb = document.querySelector('.breadcrumbs');
         if (breadcrumb) breadcrumb.textContent = `Produkty / ${activeCat.name_pl}`;
+      }
+    }
+
+    // Load features + user prefs for category sidebar
+    const sid = getSessionId();
+    let currentPrefSet = new Set();
+    if (activeCat) {
+      const [catFeatures, userPrefs] = await Promise.all([
+        loadCategoryFeatures(activeCat.id),
+        loadUserPrefs(sid, activeCat.id),
+      ]);
+      const featureContainer = document.querySelector('[data-render="features"]');
+      if (catFeatures.length) {
+        currentPrefSet = renderFeatureToggles(featureContainer, catFeatures, userPrefs, activeCat.id, sid,
+          async (prefSet) => {
+            await updateProductRingsFromBatch(grid, activeCat.id, sid, prefSet);
+          }
+        );
+      }
+      // Pokaż persoonalizowane match scores jeśli są preferencje
+      if (userPrefs.length) {
+        await updateProductRingsFromBatch(grid, activeCat.id, sid, new Set(userPrefs));
       }
     }
 
@@ -267,6 +398,42 @@
     else sidebar.appendChild(catList);
   }
 
+  // Aktualizuje ringi match score na kartach po batch computation
+  async function updateProductRingsFromBatch(grid, categoryId, sessionId, prefSet) {
+    if (!prefSet.size) return;
+    const cards = grid.querySelectorAll('[data-product-id]');
+    if (!cards.length) return;
+    const productIds = [...cards].map(c => parseInt(c.dataset.productId)).filter(Boolean);
+
+    try {
+      const r = await fetch(`${BASE}/api/preferences/match-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, categoryId, productIds }),
+      });
+      const scores = await r.json();
+      for (const card of cards) {
+        const pid = parseInt(card.dataset.productId);
+        const score = scores[pid];
+        const ring = card.querySelector('.match-ring');
+        if (!ring) continue;
+        if (score !== null && score !== undefined) {
+          ring.className = 'match-ring';
+          ring.style.setProperty('--score', Math.round(score));
+          ring.innerHTML = `<span>${Math.round(score)}<small>%</small></span>`;
+          ring.removeAttribute('data-modal');
+          card.classList.remove('product-card-no-score');
+        } else {
+          ring.className = 'match-ring match-ring-empty match-ring-trigger';
+          ring.style.removeProperty('--score');
+          ring.innerHTML = '<span>?</span>';
+          ring.setAttribute('data-modal', 'noProfileInfo');
+          card.classList.add('product-card-no-score');
+        }
+      }
+    } catch { /* ignoruj */ }
+  }
+
   // ── PRODUCT DETAIL PAGE ───────────────────────────────────
   async function initProductPage() {
     const id = getUrlParam('id');
@@ -284,9 +451,55 @@
       }
       renderProductDetail(product);
       renderProductAffiliates(affiliates, product.name_pl || product.name_en);
+
+      // Cechy kategorii + preferencje użytkownika
+      if (product.category_id) {
+        const sid = getSessionId();
+        const [catFeatures, userPrefs] = await Promise.all([
+          loadCategoryFeatures(product.category_id),
+          loadUserPrefs(sid, product.category_id),
+        ]);
+
+        const featureContainer = document.querySelector('[data-render="features"]');
+        if (catFeatures.length) {
+          const prefSet = renderFeatureToggles(
+            featureContainer, catFeatures, userPrefs, product.category_id, sid,
+            (ps) => updateProductDetailRing(product.features || [], ps)
+          );
+          // Oblicz i wyświetl personalny match score od razu
+          if (prefSet.size) updateProductDetailRing(product.features || [], prefSet);
+        }
+      }
     } catch (e) {
       console.error('Błąd ładowania produktu:', e);
     }
+  }
+
+  function updateProductDetailRing(productFeatures, prefSet) {
+    const ring = document.querySelector('.score-circle');
+    if (!ring) return;
+    if (!prefSet.size) {
+      ring.style.removeProperty('--score');
+      const inner = ring.querySelector('[data-score-Wartość]');
+      if (inner) inner.textContent = '?';
+      return;
+    }
+    // Grupuj cechy produktu po feature_en (positive/negative)
+    const featureMap = {};
+    for (const f of productFeatures) {
+      if (!featureMap[f.feature_en]) featureMap[f.feature_en] = { positive: 0, negative: 0 };
+      if (f.sentiment === 'positive') featureMap[f.feature_en].positive += (f.mention_count || 0);
+      else featureMap[f.feature_en].negative += (f.mention_count || 0);
+    }
+    const scored = [...prefSet].map(fe => ({
+      feature_en: fe,
+      positive: featureMap[fe]?.positive || 0,
+      negative: featureMap[fe]?.negative || 0,
+    }));
+    const score = calculateMatchScore(scored);
+    ring.style.setProperty('--score', score);
+    const inner = ring.querySelector('[data-score-Wartość]');
+    if (inner) inner.textContent = score;
   }
 
   function renderProductAffiliates(affiliates, productName) {
@@ -465,15 +678,103 @@
 
   // ── INDEX PAGE ────────────────────────────────────────────
   async function initIndexPage() {
-    // Replace hardcoded featured products with real ones
     const featuredContainers = document.querySelectorAll('[data-render="featured-phones"]');
     if (!featuredContainers.length) return;
     try {
       const data = await fetchProducts({ featured: 'true', limit: 5 });
-      const fallback = await fetchProducts({ limit: 5 }); // if no featured products
+      const fallback = await fetchProducts({ limit: 5 });
       const items = data.products?.length ? data.products : fallback.products || [];
       featuredContainers.forEach(el => { el.innerHTML = items.map(apiProductCard).join(''); });
-    } catch (e) { /* ignore, keep static fallback */ }
+    } catch (e) { /* ignore */ }
+  }
+
+  // ── PROFILE PAGE ──────────────────────────────────────────
+  async function initProfilePage() {
+    const tabsEl    = document.getElementById('profile-cat-tabs');
+    const featWrap  = document.getElementById('profile-features-wrap');
+    const prodsWrap = document.getElementById('profile-products-wrap');
+    if (!tabsEl || !featWrap) return;
+
+    const sid = getSessionId();
+    const categories = await fetchCategories();
+    if (!categories?.length) return;
+
+    const activeCats = categories.filter(c => c.is_active);
+    let activeCatId  = parseInt(getUrlParam('category')) || activeCats[0]?.id;
+
+    const renderTabs = () => {
+      tabsEl.innerHTML = activeCats.map(c => `
+        <button class="cat-tab-btn${c.id === activeCatId ? ' active' : ''}" data-cat-id="${c.id}">
+          ${escHtml(c.name_pl)}
+        </button>`).join('');
+      tabsEl.querySelectorAll('[data-cat-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeCatId = parseInt(btn.dataset.catId);
+          renderTabs();
+          loadProfileCategory();
+        });
+      });
+    };
+
+    const loadProfileCategory = async () => {
+      featWrap.innerHTML = '<p style="padding:24px;color:#888">Ładowanie cech...</p>';
+      if (prodsWrap) prodsWrap.innerHTML = '';
+
+      const cat = activeCats.find(c => c.id === activeCatId);
+      const [features, userPrefs] = await Promise.all([
+        loadCategoryFeatures(activeCatId),
+        loadUserPrefs(sid, activeCatId),
+      ]);
+
+      if (!features.length) {
+        featWrap.innerHTML = '<p style="padding:24px;color:#888">Brak danych dla tej kategorii.</p>';
+        return;
+      }
+
+      featWrap.innerHTML = `
+        <div class="feature-panel card profile-feature-panel">
+          <div class="feature-panel-head">
+            <p><strong>Cechy kategorii ${escHtml(cat?.name_pl || '')}</strong></p>
+          </div>
+          <p class="muted" style="padding:0 0 12px">Zaznacz co jest dla Ciebie ważne. Revbox pokaże Ci dopasowane produkty.</p>
+          <div class="feature-list" id="profile-feat-list"></div>
+          <button class="btn btn-light btn-full" data-load-features style="margin-top:10px">Load more</button>
+        </div>`;
+
+      const prefSet = renderFeatureToggles(
+        document.getElementById('profile-feat-list'),
+        features, userPrefs, activeCatId, sid,
+        (ps) => loadProfileProducts(activeCatId, sid, ps)
+      );
+
+      // Załaduj produkty z persoonalizowanymi scorami
+      await loadProfileProducts(activeCatId, sid, prefSet);
+    };
+
+    const loadProfileProducts = async (catId, sessionId, prefSet) => {
+      if (!prodsWrap) return;
+      try {
+        const data = await fetchProducts({ category: activeCats.find(c => c.id === catId)?.slug || '', limit: 8 });
+        const products = data.products || [];
+        if (!products.length) { prodsWrap.innerHTML = ''; return; }
+
+        prodsWrap.innerHTML = `
+          <div class="profile-products-head">
+            <p><strong>Produkty najlepiej dopasowane do Ciebie</strong></p>
+          </div>
+          <div class="product-grid profile-product-grid" id="profile-prod-grid">
+            ${products.map(apiProductCard).join('')}
+          </div>`;
+
+        if (prefSet.size) {
+          const grid = document.getElementById('profile-prod-grid');
+          if (grid) await updateProductRingsFromBatch(grid, catId, sessionId, prefSet);
+        }
+      } catch { prodsWrap.innerHTML = ''; }
+    };
+
+    renderTabs();
+    await loadProfileCategory();
   }
 
   // ── INIT ──────────────────────────────────────────────────
@@ -481,6 +782,7 @@
     const page = document.body.dataset.page;
     if (page === 'category') initCategoryPage();
     else if (page === 'product') initProductPage();
+    else if (page === 'profile') initProfilePage();
     else if (page === 'index' || !page) initIndexPage();
   }
 

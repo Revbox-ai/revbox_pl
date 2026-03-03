@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Revbox - Jak to działa</title>
+  <title>Revbox — Stwórz swój profil preferencji</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
 </head>
-<body data-page="static">
-  <div class="top-eco-bar">Dbamy o planetę - redukujemy ilość zwrotów</div>
-
-  <header class="site-header">
+<body data-page="profile">
+  <header class="site-header simple-header">
     <div class="container header-inner header-layout">
       <a class="brand" href="index.html"><img class="brand-logo brand-logo-wide" src="assets/images/cropped-logo.png" alt="Revbox"></a>
       <div class="header-search-nav">
@@ -27,7 +25,7 @@
         </nav>
       </div>
       <div class="header-tools">
-        <a href="profile.html" class="btn btn-outline header-cta">Stwórz swój profil preferencji</a>
+        <a href="profile.html" class="btn btn-outline header-cta active-cta">Stwórz swój profil preferencji</a>
         <nav class="header-actions">
           <a class="icon-link" href="favorites.html" aria-label="Ulubione"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7-4.35-9.1-8.65C1.12 8.3 3.11 4.5 7.2 4.5c2.02 0 3.7 1.02 4.8 2.74 1.1-1.72 2.78-2.74 4.8-2.74 4.09 0 6.08 3.8 4.3 7.35C19 16.15 12 20.5 12 20.5Z"></path></svg></a>
           <a class="icon-link" href="#" aria-label="Profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.6-3 4.1-4.5 7-4.5S17.4 16 19 19"></path></svg></a>
@@ -37,58 +35,28 @@
     </div>
   </header>
 
-  <main class="container how-works-page">
-    <h1 class="page-title">Jak działa nasza platforma</h1>
-
-    <section class="how-works-step">
-      <span class="step-no">1</span>
-      <div>
-        <h2>Wybierz cechy, które cenisz najbardziej</h2>
-        <div class="how-works-card">
-          <p class="muted" style="margin:0 0 18px;font-weight:700;color:#222;">Zaznacz cechy które są dla Ciebie ważne dla kategorii Smartphony:</p>
-          <div class="how-works-feature-columns">
-            <div class="feature-list" data-render="howitw-features"></div>
-            <div class="feature-list" data-render="howitw-features"></div>
-            <div class="feature-list" data-render="howitw-features"></div>
-          </div>
-        </div>
+  <main>
+    <section class="profile-hero">
+      <div class="container">
+        <div class="eyebrow">Twój profil</div>
+        <h1>Stwórz swój profil preferencji</h1>
+        <p class="profile-hero-sub">Powiedz nam co jest dla Ciebie ważne w każdej kategorii. Revbox wskażę produkty najlepiej dopasowane do Twoich potrzeb — nie te najdroższe, lecz te najlepsze <em>dla Ciebie</em>.</p>
       </div>
     </section>
 
-    <section class="how-works-step">
-      <span class="step-no">2</span>
-      <div>
-        <h2>I zobacz, które produkty najbardziej odpowiadają Twoim preferencjom</h2>
-        <div class="how-works-products" data-render="howitw-products"></div>
-      </div>
-    </section>
-
-    <section class="how-works-step how-works-step-3">
-      <span class="step-no">3</span>
-      <div>
-        <h2>Od teraz już nie musisz tracić czasu na żmudne poszukiwania. Otrzymuj idealnie dopasowane produkty dzięki systemowi oceniającemu Revbox.</h2>
-        <div class="how-works-search">
-          <input type="search" placeholder="Znajdź produkt, który do Ciebie pasuje ...">
-          <a href="category.html" class="btn">Szukaj dopasowanych do Ciebie produktów</a>
+    <section class="profile-main container">
+      <div class="cat-tabs-wrap">
+        <div class="cat-tabs" id="profile-cat-tabs">
+          <p style="color:#aaa;padding:12px 0">Ładowanie kategorii...</p>
         </div>
       </div>
-    </section>
 
-    <section class="how-works-faq">
-      <article class="how-works-faq-item">
-        <span class="faq-q">?</span>
-        <div>
-          <h3>Jak działa algorytm MATCH SCORE?</h3>
-          <p>Algorytm Match Score działa, analizując dane o preferencjach użytkownika oraz cechy produktów, aby ocenić ich wzajemną zgodność. Na podstawie informacji takich jak wcześniejsze wybory priorytetowych cech określonych przez użytkownika, algorytm przetwarza te dane i tworzy spersonalizowany wynik dopasowania. Algorytm Match Score korzysta z zaawansowanych technologii AI i analizy danych, by precyzyjnie dopasować produkty do indywidualnych potrzeb użytkownika. Im bardziej szczegółowe informacje użytkownik udostępnia, tym trafniejsze są rekomendacje produktowe, które algorytm wyraża jako procent dopasowania.</p>
+      <div class="profile-content-grid">
+        <div id="profile-features-wrap">
+          <p style="color:#aaa;padding:24px 0">Wybierz kategorię powyżej.</p>
         </div>
-      </article>
-      <article class="how-works-faq-item">
-        <span class="faq-q">?</span>
-        <div>
-          <h3>Co to procent dopasowania?</h3>
-          <p>Procent dopasowania to zaawansowany wskaźnik opracowany przez algorytm Match Score, który analizuje produkty pod kątem zgodności z preferencjami użytkownika. Na podstawie informacji takich jak wcześniejsze wybory priorytetowych cech określonych przez użytkownika, system oblicza, jak dobrze dany produkt odpowiada indywidualnym potrzebom użytkownika. Wartość procentowa wyraża stopień zgodności, ułatwiając decyzję zakupową i pomagając szybciej znaleźć produkty, które najlepiej spełniają oczekiwania. Im wyższy procent dopasowania, tym większe prawdopodobieństwo, że produkt spełni Twoje wymagania.</p>
-        </div>
-      </article>
+        <div id="profile-products-wrap"></div>
+      </div>
     </section>
   </main>
 
@@ -127,11 +95,10 @@
       <div>
         <h4>Popularne kategorie</h4>
         <div class="footer-link-list tight">
-          <a href="category.html">Smartphony</a>
-          <a href="#">Laptopy</a>
-          <a href="#">Pralki</a>
-          <a href="#">Telewizory</a>
-          <a href="#">Karty graficzne</a>
+          <a href="category.html?category=smartphones">Smartphony</a>
+          <a href="category.html?category=laptops-pcs">Laptopy</a>
+          <a href="category.html?category=gaming-streaming">Gaming</a>
+          <a href="category.html?category=audio-video-multimedia">Audio</a>
         </div>
       </div>
       <div class="footer-news">
@@ -151,5 +118,6 @@
   </footer>
 
   <script src="assets/js/app.js"></script>
+  <script src="assets/js/revbox-api.js"></script>
 </body>
 </html>
