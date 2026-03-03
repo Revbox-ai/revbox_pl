@@ -57,7 +57,7 @@
     const img = p.image_url || placeholderImg(p.id);
     const name = escHtml(p.name_pl || p.name_en);
     const featureCount = parseInt(p.feature_count) || 0;
-    const price = formatPrice(p.price_pln, p.price_eur);
+    const totalMentions = parseInt(p.total_mentions) || 0;
     return `
       <article class="product-card product-card-no-score">
         <div class="product-card-head">
@@ -66,8 +66,8 @@
         </div>
         <img class="product-image" src="${img}" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGES[0]}'">
         <h3>${name}</h3>
-        <div class="meta"><span>Cechy</span><strong>${featureCount > 0 ? featureCount : '—'}</strong></div>
-        <div class="price-line">${price}</div>
+        <div class="meta"><span>Revbox score</span><strong>${featureCount > 0 ? featureCount + '%' : '—'}</strong></div>
+        <div class="price-line">Przeanalizowano <strong>${totalMentions > 0 ? totalMentions.toLocaleString('pl') : '—'}</strong> wzmianek</div>
         <div class="card-actions"><a class="btn btn-outline" href="product.html?id=${p.id}">Zobacz recenzję</a></div>
       </article>`;
   }
