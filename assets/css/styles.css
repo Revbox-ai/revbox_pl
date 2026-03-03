@@ -416,7 +416,7 @@ button { cursor: pointer; }
 .feature-panel {
   margin-top: 18px;
 }
-.feature-panel-head h2 {
+.feature-panel-head h2, .feature-panel-head p {
   font-size: 1.2rem;
   margin: 0;
 }
@@ -911,7 +911,7 @@ button { cursor: pointer; }
 .feature-panel-head {
   gap: 14px;
 }
-.feature-panel-head h2 {
+.feature-panel-head h2, .feature-panel-head p {
   flex: 1;
 }
 .help-trigger {
