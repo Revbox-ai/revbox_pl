@@ -162,6 +162,17 @@
       searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
     }
 
+    // Expose clear-price for filter-tag × click
+    window.__revboxClearPrice = () => {
+      priceMin = null; priceMax = null;
+      if (priceMinInput) priceMinInput.value = '';
+      if (priceMaxInput) priceMaxInput.value = '';
+      if (priceFilterClear) priceFilterClear.style.display = 'none';
+      renderFilterTags(activeCat, null, null);
+      updateBucketActive(null);
+      loadCategoryProducts(grid, categorySlug, search, 1, null, null);
+    };
+
     // Render initial state
     renderFilterTags(activeCat, priceMin, priceMax);
     updateBucketActive(priceMax);
@@ -187,11 +198,11 @@
       tags.push(`<span style="cursor:pointer" onclick="window.location.href='category.html'">${escHtml(cat.name_pl)} ×</span>`);
     }
     if (priceMin && priceMax) {
-      tags.push(`<span>${priceMin} – ${priceMax} zł</span>`);
+      tags.push(`<span style="cursor:pointer" onclick="window.__revboxClearPrice && window.__revboxClearPrice()">${priceMin} – ${priceMax} zł ×</span>`);
     } else if (priceMax) {
-      tags.push(`<span>do ${priceMax} zł</span>`);
+      tags.push(`<span style="cursor:pointer" onclick="window.__revboxClearPrice && window.__revboxClearPrice()">do ${priceMax} zł ×</span>`);
     } else if (priceMin) {
-      tags.push(`<span>od ${priceMin} zł</span>`);
+      tags.push(`<span style="cursor:pointer" onclick="window.__revboxClearPrice && window.__revboxClearPrice()">od ${priceMin} zł ×</span>`);
     }
     container.innerHTML = tags.join('');
     const head = container.closest('.section-head')?.querySelector('.eyebrow');
