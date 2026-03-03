@@ -2189,22 +2189,20 @@ body[data-page="home"] .product-row .product-card {
 
 /* ── PROFILE PAGE ────────────────────────────── */
 .profile-hero {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
-  padding: 60px 0 50px;
+  background: #fff;
+  padding: 48px 0 36px;
   text-align: center;
 }
 .profile-hero h1 {
   font-size: clamp(1.7rem, 4vw, 2.6rem);
   font-weight: 800;
-  margin: 8px 0 16px;
-  color: #fff;
+  margin: 0 0 14px;
+  color: #1a1a2e;
 }
-.profile-hero .eyebrow { color: #f7b321; opacity: 1; }
 .profile-hero-sub {
-  max-width: 600px;
+  max-width: 560px;
   margin: 0 auto;
-  color: rgba(255,255,255,.7);
+  color: #666;
   font-size: 1.05rem;
   line-height: 1.6;
 }
