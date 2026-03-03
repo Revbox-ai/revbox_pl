@@ -676,6 +676,7 @@ async function openProductPage(id) {
         <div class="card" style="margin-bottom:16px">
           <div class="card-title" style="margin-bottom:8px">Opis produktu</div>
           <textarea class="form-control" id="f-desc" rows="4">${escHtml(prod.description_pl||'')}</textarea>
+          <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="saveProductPage(${id})">Zapisz opis</button>
         </div>
 
         <!-- Cechy -->
