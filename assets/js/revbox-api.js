@@ -255,7 +255,10 @@
       }
     }
     document.querySelectorAll('.breadcrumbs').forEach(el => {
-      el.textContent = `Produkty / ${p.category_name || 'Wszystkie'} / ${name}`;
+      const catLink = p.category_slug
+        ? `<a href="category.html?category=${p.category_slug}">${escHtml(p.category_name)}</a>`
+        : `<a href="category.html">Wszystkie</a>`;
+      el.innerHTML = `<a href="category.html">Produkty</a> / ${catLink} / ${escHtml(name)}`;
     });
     document.querySelectorAll('.page-subtitle').forEach(el => {
       el.textContent = p.category_name || '';
