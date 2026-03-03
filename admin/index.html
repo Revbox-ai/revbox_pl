@@ -289,6 +289,22 @@ async function api(path, opts={}) {
   return r.json();
 }
 
+async function recomputeScores() {
+  const btn = document.getElementById('recompute-btn');
+  const res = document.getElementById('recompute-result');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Przeliczam...';
+  const data = await api('/api/admin/recompute-scores', { method: 'POST' });
+  btn.disabled = false;
+  btn.textContent = '↻ Przelicz Match Score';
+  if (data && data.ok) {
+    res.style.display = 'block';
+    res.textContent = `✓ Przeliczono ${data.updated} produktów.`;
+    setTimeout(() => { res.style.display = 'none'; }, 5000);
+  }
+}
+
 // ── DASHBOARD ─────────────────────────────────────────────────
 async function renderDashboard() {
   const content = document.getElementById('content');
@@ -320,7 +336,9 @@ async function renderDashboard() {
         <button class="btn btn-primary" onclick="goto('products')">Zarządzaj produktami</button>
         <button class="btn btn-secondary" onclick="goto('categories')">Zarządzaj kategoriami</button>
         <button class="btn btn-secondary" onclick="goto('logs')">Przeglądaj logi</button>
+        <button class="btn btn-success" id="recompute-btn" onclick="recomputeScores()">&#8635; Przelicz Match Score</button>
       </div>
+      <div id="recompute-result" style="margin-top:10px;font-size:13px;color:#388e3c;display:none"></div>
     </div>
   `;
 }
@@ -363,9 +381,9 @@ async function renderProducts() {
         <table id="prod-table">
           <thead><tr>
             <th>ID</th><th>SKU</th><th>Nazwa</th><th>Kategoria</th>
-            <th>Źródło</th><th>Cena PLN</th><th>Cechy</th><th>Status</th><th>Akcje</th>
+            <th>Źródło</th><th>Cena PLN</th><th>Cechy</th><th>Match Score</th><th>Status</th><th>Akcje</th>
           </tr></thead>
-          <tbody id="prod-body"><tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Ładowanie...</td></tr></tbody>
+          <tbody id="prod-body"><tr><td colspan="10" style="text-align:center;padding:20px;color:#888">Ładowanie...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -393,9 +411,12 @@ async function loadProducts() {
   const srcLabel = {xkom_de:'x-kom.de', morele:'Morele', amazon:'Amazon', allegro:'Allegro', other:'Inne'};
   const tbody = document.getElementById('prod-body');
   if (!data.products.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Brak produktów</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">Brak produktów</td></tr>';
   } else {
-    tbody.innerHTML = data.products.map(p => `
+    tbody.innerHTML = data.products.map(p => {
+      const ms = p.match_score != null ? Math.round(p.match_score) : null;
+      const msColor = ms === null ? '#ccc' : ms >= 80 ? '#388e3c' : ms >= 60 ? '#f57c00' : '#c62828';
+      return `
       <tr>
         <td>${p.id}</td>
         <td><code style="font-size:11px">${escHtml(p.sku)}</code></td>
@@ -404,6 +425,7 @@ async function loadProducts() {
         <td>${p.source ? `<span class="badge" style="background:#e8f0fe;color:#1967d2">${srcLabel[p.source]||p.source}</span>` : '<span style="color:#ccc">—</span>'}</td>
         <td>${p.price_pln ? `${Number(p.price_pln).toFixed(2)} zł` : '—'}</td>
         <td>${p.feature_count > 0 ? `<span class="badge badge-green">${p.feature_count}</span>` : '<span style="color:#ccc">0</span>'}</td>
+        <td><strong style="color:${msColor}">${ms !== null ? ms + '%' : '—'}</strong></td>
         <td>
           <label class="toggle">
             <input type="checkbox" ${p.is_active?'checked':''} onchange="toggleProduct(${p.id},this)">
@@ -415,7 +437,7 @@ async function loadProducts() {
           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${escHtml(p.name_pl)}')">Usuń</button>
         </td>
       </tr>
-    `).join('');
+    `; }).join('');
   }
 
   // Pagination

@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAdmin } = require('../middleware/auth');
+const { calculateMatchScore } = require('../services/matchScore');
 
 const router = express.Router();
 
@@ -105,6 +106,43 @@ router.patch('/users/:id/toggle', requireAdmin, async (req, res) => {
     );
     if (!rows.length) return res.status(404).json({ error: 'Nie znaleziono' });
     res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
+// POST /api/admin/recompute-scores  — przelicza match_score dla wszystkich produktów z cechami
+router.post('/recompute-scores', requireAdmin, async (req, res) => {
+  try {
+    const { rows: products } = await db.query(
+      'SELECT DISTINCT product_id FROM product_features'
+    );
+    let updated = 0;
+    for (const { product_id } of products) {
+      const { rows: features } = await db.query(
+        `SELECT
+           feature_en,
+           COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'positive'), 0) AS positive,
+           COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'negative'), 0) AS negative
+         FROM product_features
+         WHERE product_id = $1
+         GROUP BY feature_en`,
+        [product_id]
+      );
+      const result = calculateMatchScore(features);
+      await db.query(
+        `UPDATE products SET match_score = $1, match_score_data = $2, updated_at = NOW() WHERE id = $3`,
+        [result.matchScore, JSON.stringify(result), product_id]
+      );
+      updated++;
+    }
+    await db.query(
+      `INSERT INTO activity_logs (user_id, username, action, entity_type, entity_id)
+       VALUES ($1,$2,'recompute_scores','system','0')`,
+      [req.adminUser.user_id, req.adminUser.username]
+    );
+    res.json({ ok: true, updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Błąd serwera' });
