@@ -208,7 +208,7 @@
 
     const html = affiliates.map(a => {
       const logo = a.shop_logo
-        ? `<img src="${escHtml(a.shop_logo)}" alt="${escHtml(a.shop_name)}" style="max-height:42px;max-width:104px;object-fit:contain">`
+        ? `<img src="${escHtml(a.shop_logo)}" alt="${escHtml(a.shop_name)}" style="max-height:63px;max-width:156px;object-fit:contain">`
         : `<strong>${escHtml(a.shop_name)}</strong>`;
       const details = a.price_with_shipping
         ? `Z wysyłką: ${Number(a.price_with_shipping).toFixed(2)} zł`
