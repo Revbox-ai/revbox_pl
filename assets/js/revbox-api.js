@@ -690,9 +690,9 @@
 
   // ── PROFILE PAGE ──────────────────────────────────────────
   async function initProfilePage() {
-    const tabsEl   = document.getElementById('profile-cat-tabs');
+    const selectEl = document.getElementById('profile-cat-select');
     const featWrap = document.getElementById('profile-features-wrap');
-    if (!tabsEl || !featWrap) return;
+    if (!selectEl || !featWrap) return;
 
     const sid = getSessionId();
     const categories = await fetchCategories();
@@ -701,19 +701,14 @@
     const activeCats = categories.filter(c => c.is_active);
     let activeCatId  = parseInt(getUrlParam('category')) || activeCats[0]?.id;
 
-    const renderTabs = () => {
-      tabsEl.innerHTML = activeCats.map(c => `
-        <button class="cat-tab-btn${c.id === activeCatId ? ' active' : ''}" data-cat-id="${c.id}">
-          ${escHtml(c.name_pl)}
-        </button>`).join('');
-      tabsEl.querySelectorAll('[data-cat-id]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          activeCatId = parseInt(btn.dataset.catId);
-          renderTabs();
-          loadProfileCategory();
-        });
-      });
-    };
+    // Wypełnij dropdown
+    selectEl.innerHTML = activeCats.map(c =>
+      `<option value="${c.id}"${c.id === activeCatId ? ' selected' : ''}>${escHtml(c.name_pl)}</option>`
+    ).join('');
+    selectEl.addEventListener('change', () => {
+      activeCatId = parseInt(selectEl.value);
+      loadProfileCategory();
+    });
 
     const loadProfileCategory = async () => {
       featWrap.innerHTML = '<p style="padding:24px;color:#888">Ładowanie cech...</p>';
@@ -745,7 +740,6 @@
       );
     };
 
-    renderTabs();
     await loadProfileCategory();
   }
 
