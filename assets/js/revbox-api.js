@@ -250,7 +250,7 @@
         seoBox.innerHTML = '';
         if (h2) seoBox.appendChild(h2);
         const article = document.createElement('article');
-        article.innerHTML = `<p>${escHtml(p.seo_text_pl).replace(/\n/g, '<br>')}</p>`;
+        article.innerHTML = p.seo_text_pl;
         seoBox.appendChild(article);
       }
     }
