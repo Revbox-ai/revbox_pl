@@ -1042,6 +1042,7 @@ button { cursor: pointer; }
   font-size: 0.8rem;
 }
 .section-head h2, .section-head h3, .page-title { line-height: 1.15; }
+.sidebar .page-title { font-size: 1.35rem; font-weight: 600; margin: 0; }
 
 @media (max-width: 1280px) {
   .insight-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
