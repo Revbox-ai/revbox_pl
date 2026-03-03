@@ -178,16 +178,58 @@
     if (!id) return;
 
     try {
-      const product = await fetchProduct(id);
+      const [product, affiliates] = await Promise.all([
+        fetchProduct(id),
+        fetch(`${BASE}/api/affiliates/product/${id}`).then(r => r.json()).catch(() => []),
+      ]);
       if (product.error) {
         document.querySelector('.content-column')?.insertAdjacentHTML('afterbegin',
           '<p style="padding:40px;color:#e63946">Produkt nie został znaleziony.</p>');
         return;
       }
       renderProductDetail(product);
+      renderProductAffiliates(affiliates, product.name_pl || product.name_en);
     } catch (e) {
       console.error('Błąd ładowania produktu:', e);
     }
+  }
+
+  function renderProductAffiliates(affiliates, productName) {
+    const block = document.querySelector('.offers-block');
+    if (!block) return;
+
+    if (!affiliates || !affiliates.length) {
+      block.style.display = 'none';
+      return;
+    }
+
+    const h2 = block.querySelector('h2');
+    if (h2) h2.textContent = `Zamów ${productName} u naszego zaufanego partnera`;
+
+    const html = affiliates.map(a => {
+      const logo = a.shop_logo
+        ? `<img src="${escHtml(a.shop_logo)}" alt="${escHtml(a.shop_name)}" style="max-height:32px;max-width:80px;object-fit:contain">`
+        : `<strong>${escHtml(a.shop_name)}</strong>`;
+      const details = a.price_with_shipping
+        ? `Z wysyłką: ${Number(a.price_with_shipping).toFixed(2)} zł`
+        : (a.delivery_note || '');
+      const delivery = a.delivery_time || '';
+      const price = a.price_pln ? `${Number(a.price_pln).toFixed(2)} zł` : '';
+      return `<article class="offer-row">
+        <div class="offer-brand">${logo}</div>
+        <div class="offer-content">${escHtml(a.delivery_note || a.shop_name)}</div>
+        <div class="offer-price">
+          ${price ? `<strong>${price}</strong>` : ''}
+          ${details ? `<div class="muted small">${escHtml(details)}</div>` : ''}
+          ${delivery ? `<div class="offer-delivery small">${escHtml(delivery)}</div>` : ''}
+          <a class="btn" href="${escHtml(a.product_url)}" target="_blank" rel="noopener">Idź do sklepu</a>
+        </div>
+      </article>`;
+    }).join('');
+
+    block.querySelectorAll('[data-render="offers"], [data-render="offers-modal"]').forEach(el => {
+      el.innerHTML = html;
+    });
   }
 
   function renderProductDetail(p) {
