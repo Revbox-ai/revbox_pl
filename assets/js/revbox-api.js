@@ -66,7 +66,7 @@
         </div>
         <img class="product-image" src="${img}" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGES[0]}'">
         <h3>${name}</h3>
-        <div class="meta"><button class="score-help-btn" data-score-help="1" aria-label="Co to jest Revbox Score?">?</button><span>Revbox score</span><strong>${featureCount > 0 ? featureCount + '%' : '—'}</strong></div>
+        <div class="meta-wrap"><button class="score-help-btn" data-score-help="1" aria-label="Co to jest Revbox Score?">?</button><div class="meta"><span>Revbox score</span><strong>${featureCount > 0 ? featureCount + '%' : '—'}</strong></div></div>
         <div class="price-line">Przeanalizowano <strong>${totalMentions > 0 ? totalMentions.toLocaleString('pl') : '—'}</strong> wzmianek</div>
         <div class="card-actions"><a class="btn btn-outline" href="product.html?id=${p.id}">Zobacz recenzję</a></div>
       </article>`;

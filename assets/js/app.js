@@ -317,7 +317,7 @@ function productCard(product, options = {}) {
       </div>
       <img class="product-image" src="${product.image}" alt="${product.name}">
       <h3>${product.name}</h3>
-      <div class="meta"><span>Revbox score</span><strong>${product.revbox}%</strong></div>
+      <div class="meta-wrap"><button class="score-help-btn" data-score-help="1" aria-label="Co to jest Revbox Score?">?</button><div class="meta"><span>Revbox score</span><strong>${product.revbox}%</strong></div></div>
       <div class="price-line">Przeanalizowano <strong>${product.price}</strong> wzmianek</div>
       <div class="card-actions"><a class="btn btn-outline" href="${product.href}">Zobacz recenzję</a></div>
     </article>

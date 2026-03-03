@@ -345,8 +345,13 @@ button { cursor: pointer; }
   line-height: 1.22;
   min-height: 48px;
 }
+.product-card .meta-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
 .product-card .meta {
-  margin: 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
