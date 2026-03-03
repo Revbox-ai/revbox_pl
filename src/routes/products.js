@@ -106,7 +106,7 @@ router.get('/:id/quotes', async (req, res) => {
     const { rows } = await db.query(
       `SELECT id, quote_en, sentiment FROM feature_quotes
        WHERE product_id = $1 AND feature_en = $2
-       ORDER BY id LIMIT 20`,
+       ORDER BY id LIMIT 100`,
       [req.params.id, feature]
     );
     res.json(rows);
