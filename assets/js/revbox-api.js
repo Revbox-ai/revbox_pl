@@ -206,7 +206,7 @@
     }
     container.innerHTML = tags.join('');
     const head = container.closest('.section-head')?.querySelector('.eyebrow');
-    if (head) head.textContent = 'Produkty';
+    if (head) head.textContent = tags.length ? 'Filtry' : 'Produkty';
   }
 
   function updateBucketActive(priceMax) {
