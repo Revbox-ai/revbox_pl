@@ -111,7 +111,7 @@
       container.innerHTML = features.map((f, i) => `
         <label class="feature-item${!expanded && i >= SHOW ? ' hidden-feature' : ''}">
           <input type="checkbox" value="${escHtml(f.feature_en)}" ${prefSet.has(f.feature_en) ? 'checked' : ''}>
-          <span>${escHtml(f.feature_en)}<small class="feature-mention-count"> · ${Number(f.total_mentions).toLocaleString('pl')}</small></span>
+          <span>${escHtml(f.feature_en)}</span>
         </label>`).join('');
 
       container.querySelectorAll('input[type=checkbox]').forEach(input => {
@@ -690,9 +690,8 @@
 
   // ── PROFILE PAGE ──────────────────────────────────────────
   async function initProfilePage() {
-    const tabsEl    = document.getElementById('profile-cat-tabs');
-    const featWrap  = document.getElementById('profile-features-wrap');
-    const prodsWrap = document.getElementById('profile-products-wrap');
+    const tabsEl   = document.getElementById('profile-cat-tabs');
+    const featWrap = document.getElementById('profile-features-wrap');
     if (!tabsEl || !featWrap) return;
 
     const sid = getSessionId();
@@ -718,7 +717,6 @@
 
     const loadProfileCategory = async () => {
       featWrap.innerHTML = '<p style="padding:24px;color:#888">Ładowanie cech...</p>';
-      if (prodsWrap) prodsWrap.innerHTML = '';
 
       const cat = activeCats.find(c => c.id === activeCatId);
       const [features, userPrefs] = await Promise.all([
@@ -738,39 +736,13 @@
           </div>
           <p class="muted" style="padding:0 0 12px">Zaznacz co jest dla Ciebie ważne. Revbox pokaże Ci dopasowane produkty.</p>
           <div class="feature-list" id="profile-feat-list"></div>
-          <button class="btn btn-light btn-full" data-load-features style="margin-top:10px">Load more</button>
+          <button class="btn btn-light btn-full" data-load-features style="margin-top:14px">Load more</button>
         </div>`;
 
-      const prefSet = renderFeatureToggles(
+      renderFeatureToggles(
         document.getElementById('profile-feat-list'),
-        features, userPrefs, activeCatId, sid,
-        (ps) => loadProfileProducts(activeCatId, sid, ps)
+        features, userPrefs, activeCatId, sid
       );
-
-      // Załaduj produkty z persoonalizowanymi scorami
-      await loadProfileProducts(activeCatId, sid, prefSet);
-    };
-
-    const loadProfileProducts = async (catId, sessionId, prefSet) => {
-      if (!prodsWrap) return;
-      try {
-        const data = await fetchProducts({ category: activeCats.find(c => c.id === catId)?.slug || '', limit: 8 });
-        const products = data.products || [];
-        if (!products.length) { prodsWrap.innerHTML = ''; return; }
-
-        prodsWrap.innerHTML = `
-          <div class="profile-products-head">
-            <p><strong>Produkty najlepiej dopasowane do Ciebie</strong></p>
-          </div>
-          <div class="product-grid profile-product-grid" id="profile-prod-grid">
-            ${products.map(apiProductCard).join('')}
-          </div>`;
-
-        if (prefSet.size) {
-          const grid = document.getElementById('profile-prod-grid');
-          if (grid) await updateProductRingsFromBatch(grid, catId, sessionId, prefSet);
-        }
-      } catch { prodsWrap.innerHTML = ''; }
     };
 
     renderTabs();
