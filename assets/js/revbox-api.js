@@ -244,38 +244,11 @@
 
     const maxCount = Math.max(...features.map(f => f.mention_count), 1);
 
-    // Nadpisz openQuotesModal — ładuje cytaty z API
     const productId = p.id;
-    window.openQuotesModal = function(featureName) {
-      if (typeof ensureQuotesModal === 'function') ensureQuotesModal();
-      const modal = document.getElementById('quotesModal');
-      if (!modal) return;
-      const list = modal.querySelector('[data-quote-list]');
-      const title = modal.querySelector('h3');
-      if (title) title.textContent = `Cytaty: ${featureName}`;
-      if (list) list.innerHTML = '<p style="color:#aaa;padding:8px">Ładowanie cytatów...</p>';
-      if (typeof openModal === 'function') openModal('quotesModal');
-      else modal.classList.add('active');
-      fetch(`/api/products/${productId}/quotes?feature=${encodeURIComponent(featureName)}`)
-        .then(r => r.json())
-        .then(quotes => {
-          if (!list) return;
-          if (!quotes.length) {
-            list.innerHTML = '<p style="color:#aaa;padding:8px">Brak cytatów dla tej cechy.</p>';
-            return;
-          }
-          list.innerHTML = quotes.map(q =>
-            `<div class="quote-row"><p>"${escHtml(q.quote_en)}"</p></div>`
-          ).join('');
-        })
-        .catch(() => { if (list) list.innerHTML = '<p style="color:#e63946;padding:8px">Błąd ładowania cytatów.</p>'; });
-    };
 
     function featureItem(f, cls = '') {
       const pct = Math.min(100, Math.round((f.mention_count / maxCount) * 95));
-      const quoteBtn = f.sample_quote
-        ? `<button class="insight-quote-link" data-quote-feature="${escHtml(f.feature_en)}">Cytaty</button>`
-        : '';
+      const quoteBtn = `<button class="insight-quote-link" data-quote-feature="${escHtml(f.feature_en)}">Cytaty</button>`;
       return `<div class="insight-item ${cls}">
         <span class="insight-title">${escHtml(f.feature_en)}</span>
         <span class="insight-track"><i style="width:${pct}%"></i></span>
@@ -299,6 +272,37 @@
           ${cons.slice(0, 10).map(f => featureItem(f, 'negative')).join('') || '<p style="color:#888;padding:8px">Brak danych o wadach.</p>'}
         </div>
       </div>`;
+
+    // Przechwytuj klik PRZED app.js (stopPropagation) i ładuj cytaty z API
+    insightSection.addEventListener('click', e => {
+      const btn = e.target.closest('[data-quote-feature]');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const featureName = btn.dataset.quoteFeature;
+      if (typeof ensureQuotesModal === 'function') ensureQuotesModal();
+      const modal = document.getElementById('quotesModal');
+      if (!modal) return;
+      const list = modal.querySelector('[data-quote-list]');
+      const title = modal.querySelector('h3');
+      if (title) title.textContent = `Cytaty: ${featureName}`;
+      if (list) list.innerHTML = '<p style="color:#aaa;padding:8px 0">Ładowanie cytatów...</p>';
+      if (typeof openModal === 'function') openModal('quotesModal');
+      else modal.classList.add('active');
+      fetch(`/api/products/${productId}/quotes?feature=${encodeURIComponent(featureName)}`)
+        .then(r => r.json())
+        .then(quotes => {
+          if (!list) return;
+          if (!quotes.length) {
+            list.innerHTML = '<p style="color:#aaa;padding:8px 0">Brak cytatów dla tej cechy.</p>';
+            return;
+          }
+          list.innerHTML = quotes.map(q =>
+            `<div class="quote-row"><p>"${escHtml(q.quote_en)}"</p></div>`
+          ).join('');
+        })
+        .catch(() => { if (list) list.innerHTML = '<p style="color:#e63946;padding:8px 0">Błąd ładowania cytatów.</p>'; });
+    });
   }
 
   // ── INDEX PAGE ────────────────────────────────────────────
