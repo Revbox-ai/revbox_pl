@@ -580,7 +580,7 @@ button { cursor: pointer; }
   height: auto;
   object-fit: contain;
 }
-.summary-box h3 {
+.summary-box h3, .summary-box h2 {
   margin: 0 0 12px;
   font-size: 1.05rem;
 }
@@ -613,7 +613,7 @@ button { cursor: pointer; }
 .insight-group + .insight-group {
   margin-top: 26px;
 }
-.insight-group h3 {
+.insight-group h3, .insight-group h2 {
   margin: 0 0 18px;
   font-size: 1.9rem;
 }
@@ -1101,7 +1101,7 @@ button { cursor: pointer; }
 .summary-box p { line-height: 1.72; }
 
 .feature-insights { border-radius: 0; padding: 18px 18px 10px; background: #fafafa; }
-.insight-group h3 { margin: 0 0 18px; font-size: 1.1rem; font-weight: 700; }
+.insight-group h3, .insight-group h2 { margin: 0 0 18px; font-size: 1.1rem; font-weight: 700; }
 .insight-list { gap: 14px 18px; }
 .insight-title { font-size: 0.92rem; }
 .insight-track { height: 6px; }

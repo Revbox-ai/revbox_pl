@@ -241,6 +241,7 @@
     document.title = `${name} recenzja, wady i zalety`;
     document.querySelectorAll('h1').forEach(el => { el.textContent = `${name} recenzja, wady i zalety`; });
     document.querySelectorAll('.sidebar .page-title').forEach(el => { el.textContent = name; });
+    document.querySelectorAll('.summary-box h2').forEach(el => { el.textContent = `Recenzja ${name}`; });
     document.querySelectorAll('.breadcrumbs').forEach(el => {
       el.textContent = `Produkty / ${p.category_name || 'Wszystkie'} / ${name}`;
     });
@@ -268,7 +269,7 @@
     });
 
     // Features (pros/cons)
-    renderProductFeatures(p.features || [], p.id);
+    renderProductFeatures(p.features || [], p.id, name);
 
     // External link
     if (p.url) {
@@ -279,7 +280,7 @@
     }
   }
 
-  function renderProductFeatures(features, productId) {
+  function renderProductFeatures(features, productId, productName) {
     const pros = features.filter(f => f.sentiment === 'positive').sort((a, b) => b.mention_count - a.mention_count);
     const cons = features.filter(f => f.sentiment === 'negative').sort((a, b) => b.mention_count - a.mention_count);
 
@@ -302,13 +303,13 @@
 
     insightSection.innerHTML = `
       <div class="insight-group">
-        <h3>Zalety</h3>
+        <h2>Zalety ${productName}</h2>
         <div class="insight-list">
           ${pros.slice(0, 15).map(f => featureItem(f)).join('') || '<p style="color:#888;padding:8px">Brak danych o zaletach.</p>'}
         </div>
       </div>
       <div class="insight-group">
-        <h3>Wady</h3>
+        <h2>Wady ${productName}</h2>
         <div class="insight-list">
           ${cons.slice(0, 10).map(f => featureItem(f, 'negative')).join('') || '<p style="color:#888;padding:8px">Brak danych o wadach.</p>'}
         </div>
