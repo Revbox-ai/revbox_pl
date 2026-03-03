@@ -932,8 +932,26 @@ button { cursor: pointer; }
   border: 0;
   border-radius: 50%;
   background:
-    radial-gradient(closest-side, #fff 87%, transparent 88% 100%),
+    radial-gradient(closest-side, #fff 81%, transparent 82% 100%),
     conic-gradient(var(--accent) calc(var(--score) * 1%), #e2e2e2 0);
+}
+
+/* Szara część pierścienia węższa o ~30% — biały overlay tylko na szarej strefie */
+.match-ring:not(.match-ring-empty)::after,
+.score-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #fff;
+  mask-image:
+    radial-gradient(closest-side, transparent 81%, #000 82%, #000 87%, transparent 88%),
+    conic-gradient(transparent calc(var(--score) * 1%), #000 0);
+  -webkit-mask-image:
+    radial-gradient(closest-side, transparent 81%, #000 82%, #000 87%, transparent 88%),
+    conic-gradient(transparent calc(var(--score) * 1%), #000 0);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
 }
 
 .product-card .match-ring {
@@ -1926,7 +1944,7 @@ button { cursor: pointer; }
   border-color: var(--accent);
 }
 .match-ring-empty {
-  background: radial-gradient(closest-side, #fff 87%, transparent 88% 100%), conic-gradient(var(--accent) 0 100%);
+  background: radial-gradient(closest-side, #fff 81%, transparent 82% 100%), conic-gradient(var(--accent) 0 100%);
 }
 .match-ring-empty > span {
   color: var(--accent-dark);
