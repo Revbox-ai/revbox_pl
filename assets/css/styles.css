@@ -1788,6 +1788,50 @@ button { cursor: pointer; }
   height: 20px;
   font-size: 0.7rem;
 }
+.score-help-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #c7c7c7;
+  background: transparent;
+  color: #9e9e9e;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+.score-help-btn:hover { border-color: #f7b321; color: #f7b321; }
+.score-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 10px;
+  width: 220px;
+  text-align: left;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.score-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1a1a2e;
+}
 .match-info-modal {
   width: min(430px, calc(100% - 32px));
   border-radius: 26px;
