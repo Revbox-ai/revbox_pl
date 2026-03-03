@@ -244,12 +244,35 @@
 
     const maxCount = Math.max(...features.map(f => f.mention_count), 1);
 
+    // Nadpisz openQuotesModal tak by używał prawdziwych cytatów z bazy
+    const quoteByFeature = {};
+    features.forEach(f => { if (f.sample_quote) quoteByFeature[f.feature_en] = f.sample_quote; });
+    window.openQuotesModal = function(featureName) {
+      if (typeof ensureQuotesModal === 'function') ensureQuotesModal();
+      const modal = document.getElementById('quotesModal');
+      if (!modal) return;
+      const list = modal.querySelector('[data-quote-list]');
+      const title = modal.querySelector('h3');
+      if (title) title.textContent = `Cytaty: ${featureName}`;
+      const quote = quoteByFeature[featureName];
+      if (list) {
+        list.innerHTML = quote
+          ? `<div class="quote-row"><p>"${escHtml(quote)}"</p></div>`
+          : `<div class="quote-row"><p style="color:#aaa">Brak cytatu dla tej cechy.</p></div>`;
+      }
+      if (typeof openModal === 'function') openModal('quotesModal');
+      else modal.classList.add('active');
+    };
+
     function featureItem(f, cls = '') {
       const pct = Math.min(100, Math.round((f.mention_count / maxCount) * 95));
+      const quoteBtn = f.sample_quote
+        ? `<button class="insight-quote-link" data-quote-feature="${escHtml(f.feature_en)}">Cytaty</button>`
+        : '';
       return `<div class="insight-item ${cls}">
         <span class="insight-title">${escHtml(f.feature_en)}</span>
         <span class="insight-track"><i style="width:${pct}%"></i></span>
-        <span class="insight-meta"><span class="insight-count">${f.mention_count} wzmianek</span></span>
+        <span class="insight-meta"><span class="insight-count">${f.mention_count} wzmianek</span>${quoteBtn}</span>
       </div>`;
     }
 
