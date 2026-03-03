@@ -225,7 +225,7 @@
     });
 
     // Features (pros/cons)
-    renderProductFeatures(p.features || []);
+    renderProductFeatures(p.features || [], p.id);
 
     // External link
     if (p.url) {
@@ -236,15 +236,13 @@
     }
   }
 
-  function renderProductFeatures(features) {
+  function renderProductFeatures(features, productId) {
     const pros = features.filter(f => f.sentiment === 'positive').sort((a, b) => b.mention_count - a.mention_count);
     const cons = features.filter(f => f.sentiment === 'negative').sort((a, b) => b.mention_count - a.mention_count);
 
     if (!pros.length && !cons.length) return;
 
     const maxCount = Math.max(...features.map(f => f.mention_count), 1);
-
-    const productId = p.id;
 
     function featureItem(f, cls = '') {
       const pct = Math.min(100, Math.round((f.mention_count / maxCount) * 95));
