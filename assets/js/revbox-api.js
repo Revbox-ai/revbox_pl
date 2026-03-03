@@ -238,8 +238,8 @@
     const img = p.image_url || placeholderImg(p.id);
 
     // Page title
-    document.title = `${name} — recenzja, wady i zalety`;
-    document.querySelectorAll('h1').forEach(el => { el.textContent = `${name} — recenzja, wady i zalety`; });
+    document.title = `${name} recenzja, wady i zalety`;
+    document.querySelectorAll('h1').forEach(el => { el.textContent = `${name} recenzja, wady i zalety`; });
     document.querySelectorAll('.breadcrumbs').forEach(el => {
       el.textContent = `Produkty / ${p.category_name || 'Wszystkie'} / ${name}`;
     });
