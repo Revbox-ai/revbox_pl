@@ -98,6 +98,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/products/:id/quotes?feature=...
+router.get('/:id/quotes', async (req, res) => {
+  try {
+    const feature = req.query.feature || '';
+    if (!feature) return res.status(400).json({ error: 'Brak parametru feature' });
+    const { rows } = await db.query(
+      `SELECT id, quote_en, sentiment FROM feature_quotes
+       WHERE product_id = $1 AND feature_en = $2
+       ORDER BY id LIMIT 20`,
+      [req.params.id, feature]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
 // GET /api/products/:id
 router.get('/:id', async (req, res) => {
   try {

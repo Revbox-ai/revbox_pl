@@ -106,3 +106,14 @@ CREATE TABLE IF NOT EXISTS product_affiliates (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(product_id, shop_id)
 );
+
+-- Cytaty do cech produktów (max ~10 na cechę)
+CREATE TABLE IF NOT EXISTS feature_quotes (
+  id SERIAL PRIMARY KEY,
+  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  feature_en TEXT NOT NULL,
+  sentiment TEXT CHECK (sentiment IN ('positive', 'negative', 'neutral')),
+  quote_en TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_fq_product_feature ON feature_quotes(product_id, feature_en);
