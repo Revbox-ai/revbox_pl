@@ -6,7 +6,7 @@
 <title>Revbox Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:           #0b0c11;
@@ -35,6 +35,33 @@
   --radius-sm:    6px;
   --shadow:       0 4px 24px rgba(0,0,0,0.35);
   --shadow-sm:    0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ── LIGHT THEME ─────────────────────────────────────── */
+html.light {
+  --bg:           #f2f3f7;
+  --surface:      #ffffff;
+  --surface-2:    #f7f8fc;
+  --surface-3:    #eceef5;
+  --border:       rgba(0,0,0,0.07);
+  --border-hover: rgba(0,0,0,0.14);
+  --text:         #1a1c2e;
+  --text-2:       #5a5f7a;
+  --text-3:       #9ea3bb;
+  --accent-dim:   rgba(220,130,10,0.1);
+  --accent-glow:  rgba(220,130,10,0.25);
+  --green-dim:    rgba(16,160,80,0.1);
+  --red-dim:      rgba(210,50,50,0.1);
+  --blue-dim:     rgba(30,110,220,0.1);
+  --orange-dim:   rgba(210,100,20,0.1);
+  --shadow:       0 4px 24px rgba(0,0,0,0.1);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.07);
+}
+
+html.light .sidebar::before { display: none; }
+
+html.light select.form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5f7a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -85,7 +112,7 @@ body {
 }
 
 .sidebar-logo h1 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -171,7 +198,7 @@ body {
 }
 
 .sidebar-footer .username {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
@@ -211,7 +238,7 @@ body {
 }
 
 .topbar-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: var(--text);
@@ -287,7 +314,7 @@ body {
 }
 
 .card-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -355,7 +382,7 @@ body {
 .stat-card.orange .stat-icon{ background: var(--orange-dim); color: var(--orange); }
 
 .stat-val {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 30px;
   font-weight: 800;
   color: var(--text);
@@ -499,7 +526,7 @@ textarea.form-control { resize: vertical; }
 }
 
 .modal-header h2 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: var(--text);
@@ -558,7 +585,7 @@ textarea.form-control { resize: vertical; }
 }
 
 .login-logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 28px;
   font-weight: 800;
   color: var(--accent);
@@ -784,7 +811,7 @@ code {
 .aff-info { flex: 1; min-width: 0; }
 
 .aff-price-col { min-width: 130px; text-align: right; }
-.aff-price-col strong { display: block; font-size: 15px; color: var(--accent); font-family: 'Syne', sans-serif; }
+.aff-price-col strong { display: block; font-size: 15px; color: var(--accent); font-family: 'Bricolage Grotesque', sans-serif; }
 
 .aff-add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 
@@ -800,6 +827,40 @@ code {
 .quick-actions {
   display: flex; gap: 10px; flex-wrap: wrap;
 }
+
+/* ── THEME TOGGLE BTN ────────────────────────────────── */
+.theme-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 0;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.theme-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.theme-toggle-btn:hover .theme-icon { opacity: 1; }
 
 /* ── PAGE LOADER ─────────────────────────────────────── */
 .page-loader {
@@ -885,7 +946,13 @@ code {
     </nav>
     <div class="sidebar-footer">
       <span class="username" id="sidebar-user"></span>
-      <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="doLogout()">Wyloguj</button>
+      <button class="theme-toggle-btn" id="theme-btn" onclick="toggleTheme()" title="Zmień motyw">
+        <span class="theme-icon" id="theme-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </span>
+        <span id="theme-label">Jasny motyw</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;margin-top:8px" onclick="doLogout()">Wyloguj</button>
     </div>
   </div>
 
@@ -1401,13 +1468,13 @@ async function openProductPage(id) {
                 : '<div class="prod-preview-ph">Brak zdjęcia</div>'}
             </div>
             <div>
-              <div style="font-weight:600;font-size:15px;margin-bottom:8px;line-height:1.3;font-family:'Syne',sans-serif">${escHtml(prod.name_pl||prod.name_en||'')}</div>
+              <div style="font-weight:600;font-size:15px;margin-bottom:8px;line-height:1.3;font-family:'Bricolage Grotesque',sans-serif">${escHtml(prod.name_pl||prod.name_en||'')}</div>
               <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin:0">
                 ${prod.description_pl
                   ? escHtml(prod.description_pl.substring(0,450)) + (prod.description_pl.length>450?'…':'')
                   : '<span style="color:var(--text-3)">Brak opisu</span>'}
               </p>
-              ${prod.price_pln ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif">${Number(prod.price_pln).toFixed(2)} zł</div>` : ''}
+              ${prod.price_pln ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--accent);font-family:'Bricolage Grotesque',sans-serif">${Number(prod.price_pln).toFixed(2)} zł</div>` : ''}
             </div>
           </div>
         </div>
@@ -1421,7 +1488,7 @@ async function openProductPage(id) {
 
         <!-- Cechy -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">Cechy produktu <span style="color:var(--text-2);font-weight:400;font-size:13px;font-family:'Outfit',sans-serif">(${(prod.features||[]).length} łącznie)</span></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px">Cechy produktu <span style="color:var(--text-2);font-weight:400;font-size:13px;font-family:'Outfit',sans-serif">(${(prod.features||[]).length} łącznie)</span></div>
         </div>
         <div class="features-split">
           <div class="feature-col">
@@ -1981,6 +2048,33 @@ function escHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── THEME ─────────────────────────────────────────────────────
+function applyTheme(theme) {
+  const html = document.documentElement;
+  const btn = document.getElementById('theme-btn');
+  const label = document.getElementById('theme-label');
+  const icon = document.getElementById('theme-icon');
+  if (theme === 'light') {
+    html.classList.add('light');
+    if (label) label.textContent = 'Ciemny motyw';
+    if (icon) icon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+  } else {
+    html.classList.remove('light');
+    if (label) label.textContent = 'Jasny motyw';
+    if (icon) icon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.contains('light');
+  const next = isLight ? 'dark' : 'light';
+  localStorage.setItem('rbx-admin-theme', next);
+  applyTheme(next);
+}
+
+// Apply saved theme immediately
+applyTheme(localStorage.getItem('rbx-admin-theme') || 'dark');
 
 // Init
 checkSession();
