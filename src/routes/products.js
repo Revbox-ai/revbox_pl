@@ -83,6 +83,7 @@ router.get('/', async (req, res) => {
               p.description_pl, p.url, p.source, p.created_at,
               p.revbox_score, p.match_score, p.match_score_data,
               c.name_pl AS category_name, c.slug AS category_slug,
+              (SELECT COUNT(*) FROM product_features pf1 WHERE pf1.product_id = p.id) AS feature_count,
               (SELECT COALESCE(SUM(pf2.mention_count), 0) FROM product_features pf2 WHERE pf2.product_id = p.id) AS total_mentions,
               (SELECT COALESCE(SUM(pf3.mention_count), 0) FROM product_features pf3 WHERE pf3.product_id = p.id AND pf3.sentiment = 'positive') AS pros_count,
               (SELECT COALESCE(SUM(pf4.mention_count), 0) FROM product_features pf4 WHERE pf4.product_id = p.id AND pf4.sentiment = 'negative') AS cons_count
