@@ -5,14 +5,16 @@
  * Specyfikacja: docs/match-score-spec.md
  *
  * Parametry (możliwe do nadpisania przez options):
- *   lambdaFeature = 0.05  — tempo wzrostu wiarygodności cechy
+ *   lambdaFeature = 0.025 — tempo wzrostu wiarygodności cechy
  *   lambdaProduct = 0.01  — tempo wzrostu mocy produktu
  *   beta          = 0.10  — siła bonusu za dużą liczbę opinii
+ *   gammaOrder    = 0.05  — max bonus za priorytet / wyróżnienie produktu
  */
 function calculateMatchScore(features, options = {}) {
-  const lambdaFeature = options.lambdaFeature ?? 0.05;
+  const lambdaFeature = options.lambdaFeature ?? 0.025;
   const lambdaProduct = options.lambdaProduct ?? 0.01;
   const beta          = options.beta          ?? 0.10;
+  const gammaOrder    = options.gammaOrder    ?? 0.05;
 
   let weightedSum   = 0;
   let weightSum     = 0;
@@ -44,16 +46,25 @@ function calculateMatchScore(features, options = {}) {
   const productPower =
     totalOpinions > 0 ? 1 - Math.exp(-lambdaProduct * totalOpinions) : 0;
 
-  const finalRawScore = rawScore * (1 + beta * productPower);
+  // Order bonus: priorytet i wyróżnienie produktu
+  // priority: saturacja exp, featured daje pełny bonus
+  const priority      = Math.max(0, Number(options.priority ?? 0));
+  const isFeatured    = Boolean(options.isFeatured);
+  const priorityPower = 1 - Math.exp(-0.05 * priority);
+  const orderFactor   = Math.min(1, priorityPower + (isFeatured ? 1.0 : 0));
+  const orderBonus    = gammaOrder * orderFactor;
+
+  const finalRawScore = rawScore * (1 + beta * productPower) + orderBonus;
 
   const clampedRaw  = Math.max(-1, Math.min(1, finalRawScore));
   const matchScore  = ((clampedRaw + 1) / 2) * 100;
 
   return {
-    matchScore:     Number(matchScore.toFixed(2)),
-    rawScore:       Number(rawScore.toFixed(4)),
-    finalRawScore:  Number(finalRawScore.toFixed(4)),
-    productPower:   Number(productPower.toFixed(4)),
+    matchScore:    Number(matchScore.toFixed(2)),
+    rawScore:      Number(rawScore.toFixed(4)),
+    finalRawScore: Number(finalRawScore.toFixed(4)),
+    productPower:  Number(productPower.toFixed(4)),
+    orderBonus:    Number(orderBonus.toFixed(4)),
     totalOpinions,
   };
 }

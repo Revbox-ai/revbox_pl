@@ -501,7 +501,7 @@ function ensureNoProfileModal() {
       <button class="modal-close" data-close="noProfileInfo">×</button>
       <h3>Dlaczego nie widzę procentu dopasowania produktów?</h3>
       <p>Nie widzisz procentu dopasowania, ponieważ nie określiłeś jeszcze swoich preferencji. Aby Match Score mógł dokładnie dopasować produkty do Twoich potrzeb, wypełnij profil cechami, które są dla Ciebie najważniejsze.</p>
-      <a href="category.html" class="btn btn-outline">Stwórz swój profil preferencji</a>
+      <a href="profile.html" class="btn btn-outline">Stwórz swój profil preferencji</a>
     </div>
   `;
 

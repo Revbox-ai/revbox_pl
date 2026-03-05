@@ -28,6 +28,8 @@ router.get('/', async (req, res) => {
     const priceEurMax = req.query.price_eur_max ? parseFloat(req.query.price_eur_max) : null;
     const pricePlnMin = req.query.price_pln_min ? parseFloat(req.query.price_pln_min) : null;
     const pricePlnMax = req.query.price_pln_max ? parseFloat(req.query.price_pln_max) : null;
+    const sortField = req.query.sort || '';
+    const sortDir   = req.query.dir === 'asc' ? 'ASC' : 'DESC';
 
     const conditions = [];
     const params = [];
@@ -62,6 +64,18 @@ router.get('/', async (req, res) => {
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
+    const SORT_MAP = {
+      match_score:  'p.match_score',
+      revbox_score: 'p.revbox_score',
+      mentions:     'total_mentions',
+      pros:         'pros_count',
+      cons:         'cons_count',
+    };
+    const sortExpr = SORT_MAP[sortField];
+    const orderClause = sortExpr
+      ? `ORDER BY ${sortExpr} ${sortDir} NULLS LAST`
+      : 'ORDER BY p.is_featured DESC, p.priority DESC, p.id DESC';
+
     params.push(limit, offset);
     const { rows } = await db.query(
       `SELECT p.id, p.sku, p.name_pl, p.name_en, p.price_eur, p.price_pln,
@@ -69,12 +83,13 @@ router.get('/', async (req, res) => {
               p.description_pl, p.url, p.source, p.created_at,
               p.revbox_score, p.match_score, p.match_score_data,
               c.name_pl AS category_name, c.slug AS category_slug,
-              (SELECT COUNT(*) FROM product_features pf WHERE pf.product_id = p.id) AS feature_count,
-              (SELECT COALESCE(SUM(pf2.mention_count), 0) FROM product_features pf2 WHERE pf2.product_id = p.id) AS total_mentions
+              (SELECT COALESCE(SUM(pf2.mention_count), 0) FROM product_features pf2 WHERE pf2.product_id = p.id) AS total_mentions,
+              (SELECT COALESCE(SUM(pf3.mention_count), 0) FROM product_features pf3 WHERE pf3.product_id = p.id AND pf3.sentiment = 'positive') AS pros_count,
+              (SELECT COALESCE(SUM(pf4.mention_count), 0) FROM product_features pf4 WHERE pf4.product_id = p.id AND pf4.sentiment = 'negative') AS cons_count
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
        ${where}
-       ORDER BY p.is_featured DESC, p.priority DESC, p.id DESC
+       ${orderClause}
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );

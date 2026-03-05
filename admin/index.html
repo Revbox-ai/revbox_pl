@@ -17,7 +17,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#1a1a2
 .sidebar-nav{flex:1;padding:16px 0}
 .nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;border-radius:0;transition:background .15s;color:rgba(255,255,255,.7);font-size:14px;text-decoration:none}
 .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
-.nav-item.active{background:rgba(230,57,70,.2);color:#f7b321;border-right:3px solid #f7b321}
+.nav-item.active{background:#f7b321;color:#000;border-right:3px solid #c8920e}
 .nav-item svg{width:18px;height:18px;flex-shrink:0}
 .sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:13px}
 .sidebar-footer .username{color:#f7b321;font-weight:600}
@@ -184,8 +184,12 @@ tr:hover td{background:#fafafa}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
         Kategorie
       </a>
-      <a class="nav-item" onclick="goto('users')" href="#">
+      <a class="nav-item" onclick="goto('team')" href="#">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Zespół
+      </a>
+      <a class="nav-item" onclick="goto('users')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         Użytkownicy
       </a>
       <a class="nav-item" onclick="goto('logs')" href="#">
@@ -275,10 +279,10 @@ function goto(section) {
   document.querySelectorAll('.nav-item').forEach(el => {
     if (el.getAttribute('onclick')?.includes(`'${section}'`)) el.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',products:'Produkty',categories:'Kategorie',users:'Użytkownicy',logs:'Logi aktywności',affiliates:'Afiliacja — sklepy'};
+  const titles = {dashboard:'Dashboard',products:'Produkty',categories:'Kategorie',team:'Zespół',users:'Użytkownicy strony',logs:'Logi aktywności',affiliates:'Afiliacja — sklepy'};
   document.getElementById('page-title').textContent = titles[section] || section;
   document.getElementById('topbar-actions').innerHTML = '';
-  const sections = {dashboard: renderDashboard, products: renderProducts, categories: renderCategories, users: renderUsers, logs: renderLogs, affiliates: renderAffiliates};
+  const sections = {dashboard: renderDashboard, products: renderProducts, categories: renderCategories, team: renderTeam, users: renderUsers, logs: renderLogs, affiliates: renderAffiliates};
   (sections[section] || (() => {}))();
 }
 
@@ -1085,10 +1089,10 @@ async function deleteCategory(id, name) {
   else alert(r?.error || 'Błąd');
 }
 
-// ── USERS ─────────────────────────────────────────────────────
-async function renderUsers() {
+// ── TEAM (admin users) ────────────────────────────────────────
+async function renderTeam() {
   document.getElementById('topbar-actions').innerHTML =
-    `<button class="btn btn-primary" onclick="openUserModal()">+ Dodaj użytkownika</button>`;
+    `<button class="btn btn-primary" onclick="openUserModal()">+ Dodaj członka zespołu</button>`;
   const data = await api('/api/admin/users');
   if (!data) return;
 
@@ -1117,12 +1121,12 @@ async function renderUsers() {
 
 async function toggleUser(id) {
   const r = await api(`/api/admin/users/${id}/toggle`, {method:'PATCH'});
-  if (r?.id) renderUsers();
+  if (r?.id) renderTeam();
   else alert(r?.error || 'Błąd');
 }
 
 function openUserModal() {
-  showModal('Dodaj użytkownika', `
+  showModal('Dodaj członka zespołu', `
     <div class="form-group"><label>Login *</label><input class="form-control" id="uf-user"></div>
     <div class="form-group"><label>Hasło *</label><input class="form-control" id="uf-pass" type="password"></div>
     <div class="form-group">
@@ -1140,9 +1144,53 @@ function openUserModal() {
     };
     if (!body.username || !body.password) { alert('Uzupełnij wszystkie pola'); return; }
     const r = await api('/api/admin/users', {method:'POST', body: JSON.stringify(body)});
-    if (r?.id) { closeModal(); renderUsers(); }
+    if (r?.id) { closeModal(); renderTeam(); }
     else alert(r?.error || 'Błąd');
   });
+}
+
+// ── USERS (site users — registered accounts) ──────────────────
+async function renderUsers() {
+  document.getElementById('topbar-actions').innerHTML = '';
+  const data = await api('/api/admin/site-users');
+  if (!data) return;
+
+  const tbody = data.length ? data.map(u => `
+    <tr id="site-user-row-${u.id}">
+      <td>${u.id}</td>
+      <td>${escHtml(u.email)}</td>
+      <td>${escHtml(u.username)}</td>
+      <td style="font-size:12px">${new Date(u.created_at).toLocaleString('pl')}</td>
+      <td style="font-size:12px">${u.last_login ? new Date(u.last_login).toLocaleString('pl') : '—'}</td>
+      <td><span class="badge ${u.is_active ? 'badge-green' : 'badge-red'}">${u.is_active ? 'Aktywny' : 'Nieaktywny'}</span></td>
+      <td>
+        <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-success'}"
+          onclick="toggleSiteUser(${u.id}, ${u.is_active})">
+          ${u.is_active ? 'Dezaktywuj' : 'Aktywuj'}
+        </button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Brak zarejestrowanych użytkowników</td></tr>';
+
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Email</th><th>Nazwa</th><th>Rejestracja</th><th>Ostatnie logowanie</th><th>Status</th><th>Akcje</th></tr></thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function toggleSiteUser(id, currentActive) {
+  const r = await api(`/api/admin/site-users/${id}/toggle`, { method: 'PATCH' });
+  if (!r) return;
+  const row = document.getElementById(`site-user-row-${id}`);
+  if (!row) return;
+  const nowActive = r.is_active;
+  row.cells[5].innerHTML = `<span class="badge ${nowActive ? 'badge-green' : 'badge-red'}">${nowActive ? 'Aktywny' : 'Nieaktywny'}</span>`;
+  row.cells[6].innerHTML = `<button class="btn btn-sm ${nowActive ? 'btn-danger' : 'btn-success'}" onclick="toggleSiteUser(${id}, ${nowActive})">${nowActive ? 'Dezaktywuj' : 'Aktywuj'}</button>`;
 }
 
 // ── LOGS ──────────────────────────────────────────────────────

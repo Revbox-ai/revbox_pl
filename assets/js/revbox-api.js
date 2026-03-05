@@ -77,13 +77,24 @@
   // ── PREFERENCES API ────────────────────────────────────────
   async function loadCategoryFeatures(categoryId) {
     try {
-      const r = await fetch(`${BASE}/api/features/category/${categoryId}`);
+      const url = categoryId === 0
+        ? `${BASE}/api/features/all`
+        : `${BASE}/api/features/category/${categoryId}`;
+      const r = await fetch(url);
       return r.ok ? r.json() : [];
     } catch { return []; }
   }
 
   async function loadUserPrefs(sessionId, categoryId) {
     try {
+      if (categoryId === 0) {
+        // Wszystkie preferencje sesji (across all categories)
+        const r = await fetch(`${BASE}/api/preferences/${sessionId}`);
+        if (!r.ok) return [];
+        const map = await r.json(); // { catId: [feature_en, ...], ... }
+        const all = Object.values(map).flat();
+        return [...new Set(all)];
+      }
       const r = await fetch(`${BASE}/api/preferences/${sessionId}/${categoryId}`);
       return r.ok ? r.json() : [];
     } catch { return []; }
@@ -101,46 +112,77 @@
 
   // Renderuje listę cech z toggleami w podanym kontenerze.
   // Zwraca aktualny Set zaznaczonych cech.
-  function renderFeatureToggles(container, features, userPrefs, categoryId, sessionId, onChangeCallback) {
+  function renderFeatureToggles(container, features, userPrefs, categoryId, sessionId, onChangeCallback, showCount) {
     if (!container) return new Set();
     const prefSet = new Set(userPrefs);
-    const SHOW = 8;
-    let expanded = false;
+    const PAGE = showCount ?? 20;
+    let currentLimit = PAGE;
+    let query = '';
+
+    const panel = container.closest('.feature-panel');
+
+    // Wstrzyknij search input (raz)
+    if (panel && !panel.querySelector('.feature-search')) {
+      const searchEl = document.createElement('input');
+      searchEl.type = 'search';
+      searchEl.className = 'feature-search';
+      searchEl.placeholder = 'Szukaj cechy...';
+      searchEl.addEventListener('input', () => {
+        query = searchEl.value.trim().toLowerCase();
+        currentLimit = PAGE; // reset paginacji przy nowym wyszukiwaniu
+        render();
+      });
+      container.before(searchEl);
+    }
 
     const render = () => {
-      container.innerHTML = features.map((f, i) => `
-        <label class="feature-item${!expanded && i >= SHOW ? ' hidden-feature' : ''}">
+      const base = query
+        ? features.filter(f => f.feature_en.toLowerCase().includes(query))
+        : features;
+      const checked   = base.filter(f => prefSet.has(f.feature_en));
+      const unchecked = base.filter(f => !prefSet.has(f.feature_en));
+      const sorted = [...checked, ...unchecked];
+      const visible = query ? sorted : [...checked, ...unchecked.slice(0, Math.max(0, currentLimit - checked.length))];
+
+      container.innerHTML = visible.map(f => `
+        <label class="feature-item">
           <input type="checkbox" value="${escHtml(f.feature_en)}" ${prefSet.has(f.feature_en) ? 'checked' : ''}>
           <span>${escHtml(f.feature_en)}</span>
         </label>`).join('');
+
+      if (!visible.length) {
+        container.innerHTML = '<p style="font-size:13px;color:#aaa;padding:4px 0">Brak wyników</p>';
+      }
 
       container.querySelectorAll('input[type=checkbox]').forEach(input => {
         input.addEventListener('change', async () => {
           const fn = input.value;
           input.checked ? prefSet.add(fn) : prefSet.delete(fn);
+          render(); // natychmiast przesuń zaznaczoną cechę na górę
+          localStorage.setItem('revbox_last_cat', categoryId);
           await togglePreference(sessionId, categoryId, fn, input.checked);
           if (typeof onChangeCallback === 'function') onChangeCallback(prefSet);
         });
       });
+
+      // Load more button
+      const loadMoreBtn = panel?.querySelector('[data-load-features]');
+      if (loadMoreBtn) {
+        const shownUnchecked = Math.min(unchecked.length, Math.max(0, currentLimit - checked.length));
+        const allShown = query || shownUnchecked >= unchecked.length;
+        loadMoreBtn.style.display = allShown ? 'none' : '';
+        if (!allShown) {
+          const remaining = unchecked.length - shownUnchecked;
+          loadMoreBtn.textContent = `Wczytaj więcej (${remaining})`;
+          loadMoreBtn.onclick = () => {
+            currentLimit += PAGE;
+            render();
+          };
+        }
+      }
     };
 
     render();
-
-    const panel = container.closest('.feature-panel');
-    const loadMoreBtn = panel?.querySelector('[data-load-features]');
-    if (loadMoreBtn) {
-      if (features.length > SHOW) {
-        loadMoreBtn.style.display = '';
-        loadMoreBtn.onclick = () => {
-          expanded = !expanded;
-          loadMoreBtn.textContent = expanded ? 'Pokaż mniej' : 'Load more';
-          render();
-        };
-      } else {
-        loadMoreBtn.style.display = 'none';
-      }
-    }
-
     return prefSet;
   }
 
@@ -191,6 +233,8 @@
     let currentPage = parseInt(getUrlParam('page')) || 1;
     let priceMin = getUrlParam('price_min') ? parseFloat(getUrlParam('price_min')) : null;
     let priceMax = getUrlParam('price_max') ? parseFloat(getUrlParam('price_max')) : null;
+    let sortField = '';
+    let sortDir   = 'desc';
 
     // Load categories into sidebar
     const categories = await fetchCategories();
@@ -211,24 +255,32 @@
 
     // Load features + user prefs for category sidebar
     const sid = getSessionId();
+    if (activeCat) localStorage.setItem('revbox_last_cat', activeCat.id);
     let currentPrefSet = new Set();
-    if (activeCat) {
-      const [catFeatures, userPrefs] = await Promise.all([
-        loadCategoryFeatures(activeCat.id),
-        loadUserPrefs(sid, activeCat.id),
-      ]);
-      const featureContainer = document.querySelector('[data-render="features"]');
-      if (catFeatures.length) {
-        currentPrefSet = renderFeatureToggles(featureContainer, catFeatures, userPrefs, activeCat.id, sid,
-          async (prefSet) => {
-            await updateProductRingsFromBatch(grid, activeCat.id, sid, prefSet);
-          }
-        );
+    const effectiveCatId = activeCat ? activeCat.id : 0; // 0 = "Wszystkie"
+
+    const [catFeatures, userPrefs] = await Promise.all([
+      loadCategoryFeatures(effectiveCatId),
+      loadUserPrefs(sid, effectiveCatId),
+    ]);
+    // Helper: ładuje produkty i od razu aktualizuje match scores
+    const loadAndScore = async (page, pMin, pMax, sField, sDir) => {
+      await loadCategoryProducts(grid, categorySlug, search, page, pMin, pMax, sField, sDir);
+      if (currentPrefSet.size) {
+        await updateProductRingsFromBatch(grid, effectiveCatId, sid, currentPrefSet);
+        sortGridByScore(grid);
       }
-      // Pokaż persoonalizowane match scores jeśli są preferencje
-      if (userPrefs.length) {
-        await updateProductRingsFromBatch(grid, activeCat.id, sid, new Set(userPrefs));
-      }
+    };
+
+    const featureContainer = document.querySelector('[data-render="features"]');
+    if (catFeatures.length) {
+      currentPrefSet = renderFeatureToggles(featureContainer, catFeatures, userPrefs, effectiveCatId, sid,
+        async (updatedPrefSet) => {
+          currentPrefSet = updatedPrefSet;
+          await updateProductRingsFromBatch(grid, effectiveCatId, sid, updatedPrefSet);
+          sortGridByScore(grid);
+        }
+      );
     }
 
     // Price filter inputs
@@ -247,7 +299,7 @@
       if (priceFilterClear) priceFilterClear.style.display = (priceMin || priceMax) ? '' : 'none';
       renderFilterTags(activeCat, priceMin, priceMax);
       updateBucketActive(priceMax);
-      loadCategoryProducts(grid, categorySlug, search, 1, priceMin, priceMax);
+      loadAndScore(1, priceMin, priceMax, sortField, sortDir);
     });
 
     priceFilterClear?.addEventListener('click', () => {
@@ -257,7 +309,7 @@
       priceFilterClear.style.display = 'none';
       renderFilterTags(activeCat, null, null);
       updateBucketActive(null);
-      loadCategoryProducts(grid, categorySlug, search, 1, null, null);
+      loadAndScore(1, null, null, sortField, sortDir);
     });
 
     // Bucket buttons
@@ -277,7 +329,7 @@
       if (priceFilterClear) priceFilterClear.style.display = priceMax ? '' : 'none';
       renderFilterTags(activeCat, priceMin, priceMax);
       updateBucketActive(priceMax);
-      loadCategoryProducts(grid, categorySlug, search, 1, priceMin, priceMax);
+      loadAndScore(1, priceMin, priceMax, sortField, sortDir);
     });
 
     // Hook search bar
@@ -301,22 +353,33 @@
       if (priceFilterClear) priceFilterClear.style.display = 'none';
       renderFilterTags(activeCat, null, null);
       updateBucketActive(null);
-      loadCategoryProducts(grid, categorySlug, search, 1, null, null);
+      loadAndScore(1, null, null, sortField, sortDir);
     };
 
     // Render initial state
     renderFilterTags(activeCat, priceMin, priceMax);
     updateBucketActive(priceMax);
 
-    // Load products
-    await loadCategoryProducts(grid, categorySlug, search, currentPage, priceMin, priceMax);
+    // Sort dropdowns
+    const sortFieldEl = document.getElementById('sort-field');
+    const sortDirEl   = document.getElementById('sort-dir');
+    const onSortChange = () => {
+      sortField = sortFieldEl?.value || '';
+      sortDir   = sortDirEl?.value  || 'desc';
+      loadAndScore(1, priceMin, priceMax, sortField, sortDir);
+    };
+    sortFieldEl?.addEventListener('change', onSortChange);
+    sortDirEl?.addEventListener('change', onSortChange);
+
+    // Load products + score
+    await loadAndScore(currentPage, priceMin, priceMax, sortField, sortDir);
 
     // Pagination
     document.querySelector('nav.pagination')?.addEventListener('click', e => {
       if (e.target.tagName === 'A') {
         e.preventDefault();
         const p = parseInt(e.target.dataset.page);
-        if (p) loadCategoryProducts(grid, categorySlug, search, p, priceMin, priceMax);
+        if (p) loadAndScore(p, priceMin, priceMax, sortField, sortDir);
       }
     });
   }
@@ -346,12 +409,13 @@
     });
   }
 
-  async function loadCategoryProducts(grid, categorySlug, search, page, priceMin, priceMax) {
+  async function loadCategoryProducts(grid, categorySlug, search, page, priceMin, priceMax, sortField, sortDir) {
     grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Ładowanie produktów...</p>';
     try {
       const params = { category: categorySlug, search, page, limit: 24 };
       if (priceMin) params.price_pln_min = priceMin;
       if (priceMax) params.price_pln_max = priceMax;
+      if (sortField) { params.sort = sortField; params.dir = sortDir || 'desc'; }
       const data = await fetchProducts(params);
       if (!data.products?.length) {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Brak produktów w tej kategorii.</p>';
@@ -398,9 +462,37 @@
     else sidebar.appendChild(catList);
   }
 
+  // Sortuje karty w gridzie: ze scorem (malejąco) na górze, bez scoru na dole
+  function sortGridByScore(grid) {
+    const cards = [...grid.querySelectorAll('[data-product-id]')];
+    if (cards.length < 2) return;
+    cards.sort((a, b) => {
+      const aRing = a.querySelector('.match-ring');
+      const bRing = b.querySelector('.match-ring');
+      const aScore = (!aRing || aRing.classList.contains('match-ring-empty'))
+        ? -1 : parseInt(aRing.style.getPropertyValue('--score') || '0');
+      const bScore = (!bRing || bRing.classList.contains('match-ring-empty'))
+        ? -1 : parseInt(bRing.style.getPropertyValue('--score') || '0');
+      return bScore - aScore;
+    });
+    cards.forEach(c => grid.appendChild(c));
+  }
+
+  function clearAllProductRings(grid) {
+    grid.querySelectorAll('[data-product-id]').forEach(card => {
+      const ring = card.querySelector('.match-ring');
+      if (!ring) return;
+      ring.className = 'match-ring match-ring-empty match-ring-trigger';
+      ring.style.removeProperty('--score');
+      ring.innerHTML = '<span>?</span>';
+      ring.setAttribute('data-modal', 'noProfileInfo');
+      card.classList.add('product-card-no-score');
+    });
+  }
+
   // Aktualizuje ringi match score na kartach po batch computation
   async function updateProductRingsFromBatch(grid, categoryId, sessionId, prefSet) {
-    if (!prefSet.size) return;
+    if (!prefSet.size) { clearAllProductRings(grid); return; }
     const cards = grid.querySelectorAll('[data-product-id]');
     if (!cards.length) return;
     const productIds = [...cards].map(c => parseInt(c.dataset.productId)).filter(Boolean);
@@ -452,9 +544,10 @@
       renderProductDetail(product);
       renderProductAffiliates(affiliates, product.name_pl || product.name_en);
 
-      // Cechy kategorii + preferencje użytkownika
+      // Cechy kategorii + preferencje użytkownika w sidebarze
       if (product.category_id) {
         const sid = getSessionId();
+        localStorage.setItem('revbox_last_cat', product.category_id);
         const [catFeatures, userPrefs] = await Promise.all([
           loadCategoryFeatures(product.category_id),
           loadUserPrefs(sid, product.category_id),
@@ -466,7 +559,6 @@
             featureContainer, catFeatures, userPrefs, product.category_id, sid,
             (ps) => updateProductDetailRing(product.features || [], ps)
           );
-          // Oblicz i wyświetl personalny match score od razu
           if (prefSet.size) updateProductDetailRing(product.features || [], prefSet);
         }
       }
@@ -615,6 +707,7 @@
 
     if (!pros.length && !cons.length) return;
 
+    const SHOW = 8; // 4 kolumny × 2 rzędy
     const maxCount = Math.max(...features.map(f => f.mention_count), 1);
 
     function featureItem(f, cls = '') {
@@ -627,22 +720,38 @@
       </div>`;
     }
 
+    function groupHtml(list, label, key, cls) {
+      if (!list.length) return '';
+      const total = list.reduce((s, f) => s + (f.mention_count || 0), 0);
+      const isNeg = key === 'cons';
+      const countSpan = `<span style="font-size:.75em;font-weight:500;color:${isNeg ? '#e63946' : '#2e7d32'};margin-left:.4em">(${total})</span>`;
+      const items = list.map((f, i) =>
+        featureItem(f, [cls, i >= SHOW ? 'insight-hidden' : ''].filter(Boolean).join(' '))
+      ).join('');
+      const hasMore = list.length > SHOW;
+      return `<div class="insight-group">
+        <h2>${label}${countSpan}</h2>
+        <div class="insight-list" data-igroup="${key}">${items}</div>
+        ${hasMore ? `<div class="insight-expand-wrap"><button class="btn btn-outline insight-expand" data-igroup="${key}">Pokaż więcej cech</button></div>` : ''}
+      </div>`;
+    }
+
     const insightSection = document.querySelector('.feature-insights');
     if (!insightSection) return;
 
-    insightSection.innerHTML = `
-      <div class="insight-group">
-        <h2>Zalety ${productName}</h2>
-        <div class="insight-list">
-          ${pros.slice(0, 15).map(f => featureItem(f)).join('') || '<p style="color:#888;padding:8px">Brak danych o zaletach.</p>'}
-        </div>
-      </div>
-      <div class="insight-group">
-        <h2>Wady ${productName}</h2>
-        <div class="insight-list">
-          ${cons.slice(0, 10).map(f => featureItem(f, 'negative')).join('') || '<p style="color:#888;padding:8px">Brak danych o wadach.</p>'}
-        </div>
-      </div>`;
+    insightSection.innerHTML =
+      groupHtml(pros, `Zalety ${productName}`, 'pros', '') +
+      (cons.length ? groupHtml(cons, `Wady ${productName}`, 'cons', 'negative') : '');
+
+    // Expand/collapse dla każdej grupy
+    insightSection.querySelectorAll('.insight-expand').forEach(btn => {
+      const key = btn.dataset.igroup;
+      const listEl = insightSection.querySelector(`.insight-list[data-igroup="${key}"]`);
+      btn.addEventListener('click', () => {
+        const expanded = listEl.classList.toggle('insight-expanded');
+        btn.textContent = expanded ? 'Zwiń wszystkie cechy' : 'Pokaż więcej cech';
+      });
+    });
 
     // Przechwytuj klik PRZED app.js (stopPropagation) i ładuj cytaty z API
     insightSection.addEventListener('click', e => {
@@ -678,14 +787,28 @@
 
   // ── INDEX PAGE ────────────────────────────────────────────
   async function initIndexPage() {
+    const catList = document.querySelector('[data-render="index-categories"]');
     const featuredContainers = document.querySelectorAll('[data-render="featured-phones"]');
-    if (!featuredContainers.length) return;
-    try {
-      const data = await fetchProducts({ featured: 'true', limit: 5 });
-      const fallback = await fetchProducts({ limit: 5 });
-      const items = data.products?.length ? data.products : fallback.products || [];
-      featuredContainers.forEach(el => { el.innerHTML = items.map(apiProductCard).join(''); });
-    } catch (e) { /* ignore */ }
+
+    const [categories] = await Promise.all([
+      fetchCategories().catch(() => []),
+    ]);
+
+    if (catList && categories?.length) {
+      catList.innerHTML = categories
+        .filter(c => c.is_active)
+        .map(c => `<li><a href="category.html?category=${encodeURIComponent(c.slug)}">${escHtml(c.name_pl)}</a></li>`)
+        .join('');
+    }
+
+    if (featuredContainers.length) {
+      try {
+        const data = await fetchProducts({ featured: 'true', limit: 5 });
+        const fallback = await fetchProducts({ limit: 5 });
+        const items = data.products?.length ? data.products : fallback.products || [];
+        featuredContainers.forEach(el => { el.innerHTML = items.map(apiProductCard).join(''); });
+      } catch (e) { /* ignore */ }
+    }
   }
 
   // ── PROFILE PAGE ──────────────────────────────────────────
@@ -699,7 +822,8 @@
     if (!categories?.length) return;
 
     const activeCats = categories.filter(c => c.is_active);
-    let activeCatId  = parseInt(getUrlParam('category')) || activeCats[0]?.id;
+    const lastCatId  = parseInt(localStorage.getItem('revbox_last_cat'));
+    let activeCatId  = parseInt(getUrlParam('category')) || (lastCatId && activeCats.find(c => c.id === lastCatId) ? lastCatId : null) || activeCats[0]?.id;
 
     // Wypełnij dropdown
     selectEl.innerHTML = activeCats.map(c =>
@@ -727,29 +851,238 @@
       featWrap.innerHTML = `
         <div class="feature-panel card profile-feature-panel">
           <div class="feature-panel-head">
-            <p><strong>Cechy kategorii ${escHtml(cat?.name_pl || '')}</strong></p>
+            <p>Stwórz swój profil preferencji dla kategorii: <strong>${escHtml(cat?.name_pl || '')}</strong></p>
           </div>
-          <p class="muted" style="padding:0 0 12px">Zaznacz co jest dla Ciebie ważne. Revbox pokaże Ci dopasowane produkty.</p>
+          <p class="muted" style="padding:0 0 12px">Zaznacz cechy produktów, które są dla Ciebie ważne a Revbox wskaże produkty najlepiej dopasowane do Twoich preferencji.</p>
           <div class="feature-list" id="profile-feat-list"></div>
-          <button class="btn btn-light btn-full" data-load-features style="margin-top:14px">Load more</button>
+          <div style="text-align:center;margin-top:16px"><button class="btn btn-outline" data-load-features>Wczytaj więcej</button></div>
         </div>`;
 
       renderFeatureToggles(
         document.getElementById('profile-feat-list'),
-        features, userPrefs, activeCatId, sid
+        features, userPrefs, activeCatId, sid, null, 45
       );
     };
 
     await loadProfileCategory();
   }
 
+  // ── AUTH API ──────────────────────────────────────────────
+  async function checkUserSession() {
+    try {
+      const r = await fetch('/api/auth/me');
+      return r.ok ? r.json() : { loggedIn: false };
+    } catch { return { loggedIn: false }; }
+  }
+
+  async function loginUser(email, password) {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    return r.json();
+  }
+
+  async function registerUser(email, username, password) {
+    const r = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, username, password }),
+    });
+    return r.json();
+  }
+
+  async function logoutUser() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch { /* ignore */ }
+  }
+
+  function updateHeaderAuth(user) {
+    const nav = document.querySelector('.header-actions');
+    if (!nav) return;
+    const loginLink = Array.from(nav.querySelectorAll('a')).find(a => a.textContent.trim() === 'Zaloguj');
+    if (!loginLink) return;
+
+    if (user && user.loggedIn) {
+      loginLink.outerHTML =
+        `<span class="header-auth-user">Cześć, <strong>${escHtml(user.username)}</strong></span>` +
+        `<a href="#" id="header-logout-btn" class="header-auth-logout">Wyloguj</a>`;
+      document.querySelector('#header-logout-btn')?.addEventListener('click', async e => {
+        e.preventDefault();
+        await logoutUser();
+        updateHeaderAuth(null);
+      });
+    } else {
+      const existing = nav.querySelector('#header-logout-btn');
+      const userSpan = nav.querySelector('.header-auth-user');
+      if (existing) existing.remove();
+      if (userSpan) userSpan.remove();
+      const link = nav.querySelector('a') || document.createElement('a');
+      if (!link.id) {
+        link.textContent = 'Zaloguj';
+        link.href = '#';
+      }
+      link.onclick = e => { e.preventDefault(); openAuthModal('login'); };
+    }
+  }
+
+  // ── AUTH MODAL ────────────────────────────────────────────
+  function ensureAuthModal() {
+    if (document.getElementById('auth-modal-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'auth-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px';
+    overlay.innerHTML = `
+      <div id="auth-modal" style="background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+        <div style="padding:20px 24px 0;border-bottom:1px solid #eee">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h2 id="auth-modal-title" style="font-size:18px;font-weight:700;color:#1a1a2e">Zaloguj się</h2>
+            <button id="auth-modal-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">&times;</button>
+          </div>
+          <div style="display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin:0 -24px;padding:0 24px">
+            <button id="auth-tab-login" class="auth-tab auth-tab-active" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#f7b321;border-bottom:2px solid #f7b321;margin-bottom:-2px">Zaloguj się</button>
+            <button id="auth-tab-register" class="auth-tab" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:14px;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px">Zarejestruj się</button>
+          </div>
+        </div>
+        <div style="padding:24px">
+          <div id="auth-login-form">
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:5px">Email</label>
+              <input id="auth-login-email" type="email" placeholder="twoj@email.pl" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+            </div>
+            <div style="margin-bottom:20px">
+              <label style="display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:5px">Hasło</label>
+              <input id="auth-login-pass" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+            </div>
+            <div id="auth-login-error" style="color:#c62828;font-size:13px;margin-bottom:12px;display:none"></div>
+            <button id="auth-login-submit" style="width:100%;padding:11px;background:#f7b321;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Zaloguj się</button>
+          </div>
+          <div id="auth-register-form" style="display:none">
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:5px">Email</label>
+              <input id="auth-reg-email" type="email" placeholder="twoj@email.pl" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+            </div>
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:5px">Nazwa użytkownika</label>
+              <input id="auth-reg-username" type="text" placeholder="Jan" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+            </div>
+            <div style="margin-bottom:20px">
+              <label style="display:block;font-size:13px;font-weight:500;color:#555;margin-bottom:5px">Hasło</label>
+              <input id="auth-reg-pass" type="password" placeholder="min. 6 znaków" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+            </div>
+            <div id="auth-reg-error" style="color:#c62828;font-size:13px;margin-bottom:12px;display:none"></div>
+            <button id="auth-reg-submit" style="width:100%;padding:11px;background:#f7b321;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Zarejestruj się</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const switchTab = (tab) => {
+      const isLogin = tab === 'login';
+      document.getElementById('auth-login-form').style.display = isLogin ? '' : 'none';
+      document.getElementById('auth-register-form').style.display = isLogin ? 'none' : '';
+      document.getElementById('auth-modal-title').textContent = isLogin ? 'Zaloguj się' : 'Zarejestruj się';
+      const tLogin = document.getElementById('auth-tab-login');
+      const tReg   = document.getElementById('auth-tab-register');
+      tLogin.style.color  = isLogin ? '#f7b321' : '#888';
+      tLogin.style.borderBottomColor = isLogin ? '#f7b321' : 'transparent';
+      tReg.style.color    = isLogin ? '#888' : '#f7b321';
+      tReg.style.borderBottomColor   = isLogin ? 'transparent' : '#f7b321';
+    };
+
+    document.getElementById('auth-tab-login').addEventListener('click', () => switchTab('login'));
+    document.getElementById('auth-tab-register').addEventListener('click', () => switchTab('register'));
+
+    document.getElementById('auth-modal-close').addEventListener('click', () => {
+      overlay.style.display = 'none';
+    });
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.style.display = 'none';
+    });
+
+    document.getElementById('auth-login-submit').addEventListener('click', async () => {
+      const email = document.getElementById('auth-login-email').value.trim();
+      const pass  = document.getElementById('auth-login-pass').value;
+      const errEl = document.getElementById('auth-login-error');
+      errEl.style.display = 'none';
+      const result = await loginUser(email, pass);
+      if (result.loggedIn) {
+        overlay.style.display = 'none';
+        updateHeaderAuth(result);
+      } else {
+        errEl.textContent = result.error || 'Błąd logowania';
+        errEl.style.display = '';
+      }
+    });
+
+    document.getElementById('auth-reg-submit').addEventListener('click', async () => {
+      const email    = document.getElementById('auth-reg-email').value.trim();
+      const username = document.getElementById('auth-reg-username').value.trim();
+      const pass     = document.getElementById('auth-reg-pass').value;
+      const errEl    = document.getElementById('auth-reg-error');
+      errEl.style.display = 'none';
+      const result = await registerUser(email, username, pass);
+      if (result.loggedIn) {
+        overlay.style.display = 'none';
+        updateHeaderAuth(result);
+      } else {
+        errEl.textContent = result.error || 'Błąd rejestracji';
+        errEl.style.display = '';
+      }
+    });
+
+    // Enter key support
+    ['auth-login-email','auth-login-pass'].forEach(id => {
+      document.getElementById(id)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('auth-login-submit').click();
+      });
+    });
+    ['auth-reg-email','auth-reg-username','auth-reg-pass'].forEach(id => {
+      document.getElementById(id)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('auth-reg-submit').click();
+      });
+    });
+  }
+
+  function openAuthModal(tab) {
+    ensureAuthModal();
+    const overlay = document.getElementById('auth-modal-overlay');
+    overlay.style.display = 'flex';
+    const switchTab = (t) => {
+      const isLogin = t === 'login';
+      document.getElementById('auth-login-form').style.display = isLogin ? '' : 'none';
+      document.getElementById('auth-register-form').style.display = isLogin ? 'none' : '';
+      document.getElementById('auth-modal-title').textContent = isLogin ? 'Zaloguj się' : 'Zarejestruj się';
+      const tLogin = document.getElementById('auth-tab-login');
+      const tReg   = document.getElementById('auth-tab-register');
+      tLogin.style.color  = isLogin ? '#f7b321' : '#888';
+      tLogin.style.borderBottomColor = isLogin ? '#f7b321' : 'transparent';
+      tReg.style.color    = isLogin ? '#888' : '#f7b321';
+      tReg.style.borderBottomColor   = isLogin ? 'transparent' : '#f7b321';
+    };
+    switchTab(tab || 'login');
+  }
+
   // ── INIT ──────────────────────────────────────────────────
-  function init() {
+  async function init() {
     const page = document.body.dataset.page;
     if (page === 'category') initCategoryPage();
     else if (page === 'product') initProductPage();
     else if (page === 'profile') initProfilePage();
-    else if (page === 'index' || !page) initIndexPage();
+    else if (page === 'index' || page === 'home' || !page) initIndexPage();
+
+    // Auth — wire up Zaloguj link and check session
+    const nav = document.querySelector('.header-actions');
+    if (nav) {
+      const loginLink = Array.from(nav.querySelectorAll('a')).find(a => a.textContent.trim() === 'Zaloguj');
+      if (loginLink) {
+        loginLink.addEventListener('click', e => { e.preventDefault(); openAuthModal('login'); });
+      }
+      const user = await checkUserSession();
+      if (user.loggedIn) updateHeaderAuth(user);
+    }
   }
 
   // ── REVBOX SCORE TOOLTIP ──────────────────────────────────

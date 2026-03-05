@@ -10,6 +10,30 @@ const PORT = process.env.PORT || 3200;
 app.use(express.json());
 app.use(cookieParser());
 
+// Lazy-create site_users + site_sessions tables
+async function ensureSiteAuthTables() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS site_users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      username TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      last_login TIMESTAMPTZ
+    )
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS site_sessions (
+      id TEXT PRIMARY KEY,
+      user_id INT REFERENCES site_users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+}
+ensureSiteAuthTables().catch(console.error);
+
 // Panel admina — serwowany przez Express (nginx proxy)
 app.get(['/admin', '/admin/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
@@ -23,6 +47,7 @@ app.use(express.static(path.join(__dirname), {
 
 // API routes
 const authRoutes = require('./src/routes/auth');
+const siteAuthRoutes = require('./src/routes/siteAuth');
 const categoriesRoutes = require('./src/routes/categories');
 const productsRoutes = require('./src/routes/products');
 const adminRoutes = require('./src/routes/admin');
@@ -31,6 +56,7 @@ const preferencesRoutes = require('./src/routes/preferences');
 const { requireAdmin } = require('./src/middleware/auth');
 
 app.use('/api/admin/auth', authRoutes);
+app.use('/api/auth', siteAuthRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/admin', adminRoutes);

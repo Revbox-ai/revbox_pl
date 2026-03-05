@@ -5,6 +5,30 @@ const { calculateMatchScore } = require('../services/matchScore');
 
 const router = express.Router();
 
+// GET /api/features/all  — cechy wszystkich aktywnych produktów
+router.get('/all', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT
+         pf.feature_en,
+         SUM(pf.mention_count) AS total_mentions,
+         COALESCE(SUM(pf.mention_count) FILTER (WHERE pf.sentiment = 'positive'), 0) AS positive,
+         COALESCE(SUM(pf.mention_count) FILTER (WHERE pf.sentiment = 'negative'), 0) AS negative,
+         COUNT(DISTINCT pf.product_id) AS product_count
+       FROM product_features pf
+       JOIN products p ON p.id = pf.product_id
+       WHERE p.is_active = true
+       GROUP BY pf.feature_en
+       HAVING SUM(pf.mention_count) >= 5
+       ORDER BY SUM(pf.mention_count) DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
 // GET /api/features/category/:categoryId  (router mounted at /api/features)
 router.get('/category/:categoryId', async (req, res) => {
   try {
@@ -20,8 +44,7 @@ router.get('/category/:categoryId', async (req, res) => {
        WHERE p.category_id = $1 AND p.is_active = true
        GROUP BY pf.feature_en
        HAVING SUM(pf.mention_count) >= 5
-       ORDER BY SUM(pf.mention_count) DESC
-       LIMIT 50`,
+       ORDER BY SUM(pf.mention_count) DESC`,
       [req.params.categoryId]
     );
     res.json(rows);
@@ -93,30 +116,42 @@ router.post('/:sessionId/:categoryId/toggle', async (req, res) => {
 
 // POST /api/preferences/match-batch
 // Body: { sessionId, categoryId, productIds: [...] }
+// categoryId = 0  →  użyj WSZYSTKICH preferencji sesji (niezależnie od kategorii)
 // Zwraca { productId: matchScore, ... } dla produktów z listy
 router.post('/match-batch', async (req, res) => {
   try {
     const { sessionId, categoryId, productIds } = req.body;
-    if (!sessionId || !categoryId || !productIds?.length) return res.json({});
+    if (!sessionId || categoryId === undefined || categoryId === null || !productIds?.length) return res.json({});
 
-    const { rows: prefRows } = await db.query(
-      'SELECT feature_en FROM user_preferences WHERE session_id = $1 AND category_id = $2',
-      [sessionId, categoryId]
-    );
+    const { rows: prefRows } = parseInt(categoryId) === 0
+      ? await db.query(
+          'SELECT DISTINCT feature_en FROM user_preferences WHERE session_id = $1',
+          [sessionId]
+        )
+      : await db.query(
+          'SELECT feature_en FROM user_preferences WHERE session_id = $1 AND category_id = $2',
+          [sessionId, categoryId]
+        );
     if (!prefRows.length) return res.json({});
     const prefFeatures = prefRows.map(r => r.feature_en);
 
-    const { rows: featureRows } = await db.query(
-      `SELECT
-         product_id,
-         feature_en,
-         COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'positive'), 0) AS positive,
-         COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'negative'), 0) AS negative
-       FROM product_features
-       WHERE product_id = ANY($1) AND feature_en = ANY($2)
-       GROUP BY product_id, feature_en`,
-      [productIds, prefFeatures]
-    );
+    const [{ rows: featureRows }, { rows: productMetaRows }] = await Promise.all([
+      db.query(
+        `SELECT
+           product_id,
+           feature_en,
+           COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'positive'), 0) AS positive,
+           COALESCE(SUM(mention_count) FILTER (WHERE sentiment = 'negative'), 0) AS negative
+         FROM product_features
+         WHERE product_id = ANY($1) AND feature_en = ANY($2)
+         GROUP BY product_id, feature_en`,
+        [productIds, prefFeatures]
+      ),
+      db.query(
+        `SELECT id, is_featured, priority FROM products WHERE id = ANY($1)`,
+        [productIds]
+      ),
+    ]);
 
     const byProduct = {};
     for (const row of featureRows) {
@@ -128,10 +163,18 @@ router.post('/match-batch', async (req, res) => {
       });
     }
 
+    const metaByProduct = {};
+    for (const row of productMetaRows) {
+      metaByProduct[row.id] = { isFeatured: row.is_featured, priority: row.priority };
+    }
+
     const result = {};
     for (const productId of productIds) {
       const features = byProduct[productId] || [];
-      result[productId] = features.length ? calculateMatchScore(features).matchScore : null;
+      const meta     = metaByProduct[productId] || {};
+      result[productId] = features.length
+        ? calculateMatchScore(features, { isFeatured: meta.isFeatured, priority: meta.priority }).matchScore
+        : null;
     }
     res.json(result);
   } catch (err) {
