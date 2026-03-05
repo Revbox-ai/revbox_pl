@@ -908,7 +908,7 @@ code {
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-logo">
-      <h1>Revbox</h1>
+      <img id="sidebar-logo" src="../assets/images/Revbox_logo_dark.png" alt="Revbox" style="height:56px;width:auto;display:block;margin-bottom:6px">
       <span>Panel Admina</span>
     </div>
     <nav class="sidebar-nav">
@@ -1189,7 +1189,7 @@ async function loadProducts() {
         <td>${p.category_name ? `<span class="badge badge-blue">${escHtml(p.category_name)}</span>` : '<span style="color:var(--text-3)">—</span>'}</td>
         <td>${p.source ? `<span class="badge" style="background:rgba(77,158,255,0.08);color:var(--blue);border:1px solid rgba(77,158,255,0.2)">${srcLabel[p.source]||p.source}</span>` : '<span style="color:var(--text-3)">—</span>'}</td>
         <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px">${p.price_pln ? `${Number(p.price_pln).toFixed(2)} zł` : '—'}</span></td>
-        <td>${p.feature_count > 0 ? `<span class="badge badge-green">${p.feature_count}</span>` : '<span style="color:var(--text-3)">0</span>'}</td>
+        <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-3)">${p.feature_count || 0}</span></td>
         <td><strong style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${msColor}">${ms !== null ? ms + '%' : '—'}</strong></td>
         <td>
           <label class="toggle">
@@ -2052,17 +2052,19 @@ function escHtml(s) {
 // ── THEME ─────────────────────────────────────────────────────
 function applyTheme(theme) {
   const html = document.documentElement;
-  const btn = document.getElementById('theme-btn');
   const label = document.getElementById('theme-label');
   const icon = document.getElementById('theme-icon');
+  const logo = document.getElementById('sidebar-logo');
   if (theme === 'light') {
     html.classList.add('light');
     if (label) label.textContent = 'Ciemny motyw';
     if (icon) icon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+    if (logo) logo.src = '../assets/images/Revbox_logo_light.png';
   } else {
     html.classList.remove('light');
     if (label) label.textContent = 'Jasny motyw';
     if (icon) icon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    if (logo) logo.src = '../assets/images/Revbox_logo_dark.png';
   }
 }
 
